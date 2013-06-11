@@ -11,12 +11,15 @@ algorithm with bounds constraints (B).  L-BFGS-B is a deterministic,
 gradient-based algorithm for finding local minima of smooth, continuous
 objective functions subject to bounds on each variable.  The bounds are
 optional, so this software also solves unconstrained problems.  L-BFGS-B
-is accurate and efficient for problems of 1000s of variables.
-http://en.wikipedia.org/wiki/L-BFGS
+is accurate and efficient for problems of 1000s of variables.  There is
+more information about [L-BFGS-B on
+Wikipedia](http://en.wikipedia.org/wiki/L-BFGS) or in your favorite
+optimization textbook.
 
-This Go package provides a modern, intuitive interface to the L-BFGS-B
-Fortran software by the authors of the algorithm, Jorge Nocedal et al
-(http://users.eecs.northwestern.edu/~nocedal/software.html).
+This Go package provides a modern, intuitive interface to the [L-BFGS-B
+Fortran
+software](http://users.eecs.northwestern.edu/~nocedal/software.html) by
+the authors of the algorithm, Jorge Nocedal et al.
 
 
 License
