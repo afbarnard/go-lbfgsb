@@ -84,16 +84,16 @@ Build
 
 2. Build the Fortran code into a library.
 
-    $ make
+       $ make
 
    This builds a static library, `liblbfgsb.a`, that will be linked into
    your Go program.
 
 3. Import the `go-lbfgsb` module.  Build your Go program normally.
 
-    import lbfgsb "github.com/afbarnard/go-lbfgsb"
+       import lbfgsb "github.com/afbarnard/go-lbfgsb"
 
-    $ go build
+       $ go build
 
 I have not yet figured out how to use the Go build system to build
 everything, so the Fortran code must be separately built into a library
@@ -104,7 +104,7 @@ enable `go get` and other conveniences.
 Contact
 -------
 
-* [Aubrey Barnard](https::/github.com/afbarnard)
+* [Aubrey Barnard](https://github.com/afbarnard)
 
 
 Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
