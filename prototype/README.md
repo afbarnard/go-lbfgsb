@@ -18,7 +18,7 @@ operational baseline because it is a single-language program.
 
 
 How It Works
-~~~~~~~~~~~~
+------------
 
 The design of the optimization procedure is a function that takes the
 objective and gradient functions as input and returns the minimum (and
