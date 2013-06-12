@@ -32,8 +32,8 @@ GitHub](https://github.com/afbarnard/go-lbfgsb/blob/master/LICENSE.txt))
 for details.
 
 The original Fortran code is released under the BSD 3-Clause License
-(see `lbfgsb/LICENSE.txt` in your distribution or [on
-GitHub](https://github.com/afbarnard/go-lbfgsb/blob/master/lbfgsb/LICENSE.txt)).
+(see `lbfgsb/License.txt` in your distribution or [on
+GitHub](https://github.com/afbarnard/go-lbfgsb/blob/master/lbfgsb/License.txt)).
 Since I have not modified the Fortran code, I have decided just to
 incorporate it rather than re-license it.
 
