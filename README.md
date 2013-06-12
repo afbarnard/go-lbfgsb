@@ -55,8 +55,8 @@ useful, stable, released package pretty quickly.
 
 * Modern (Fortran 2003) API for original FORTRAN 77 optimizer.
 
-* Incorporates recent corrections to L-BFGS-B algorithm.  (Uses L-BFGS-B
-  version 3.0 from March, 2011.)
+* Incorporates recent improvements and corrections to L-BFGS-B
+  algorithm.  (Uses L-BFGS-B version 3.0 from March, 2011.)
 
 
 Go-Fortran Interface
