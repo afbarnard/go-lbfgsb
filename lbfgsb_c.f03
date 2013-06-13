@@ -98,7 +98,6 @@ contains
        debug_c) &
        result(error_code_c) bind(c)
 
-    use, intrinsic :: iso_c_binding
     implicit none
 
     ! Signature
@@ -115,8 +114,6 @@ contains
     ! Fortran versions of arguments
     procedure(objective_function_c), pointer :: func_p
     procedure(objective_gradient_c), pointer :: grad_p
-    integer :: dim, approximation_size
-    real(dp) :: f_tolerance, g_tolerance
     integer :: bounds_control(dim_c)
     real(dp) :: lower_bounds(dim_c), upper_bounds(dim_c), point(dim_c)
     ! Variables and memory for L-BFGS-B
@@ -136,11 +133,7 @@ contains
     ! Convert inputs from C types to Fortran types
     call c_f_procpointer(func, func_p)
     call c_f_procpointer(grad, grad_p)
-    dim = dim_c
-    approximation_size = approximation_size_c
-    f_tolerance = f_tolerance_c
-    g_tolerance = g_tolerance_c
-    ! Array copies
+    ! Array copies (TODO are these necessary? i.e. how compatible are the storage and types?)
     bounds_control = bounds_control_c
     lower_bounds = lower_bounds_c
     upper_bounds = upper_bounds_c
@@ -167,10 +160,10 @@ contains
          task(1:5) == 'START')
 
        ! Call L-BFGS-B code
-       call setulb(dim, approximation_size, point, &
+       call setulb(dim_c, approximation_size_c, point, &
             lower_bounds, upper_bounds, bounds_control, &
             func_value, grad_value, &
-            f_factor, g_tolerance, &
+            f_factor, g_tolerance_c, &
             working_real_memory, working_int_memory, &
             task, print_control, &
             char_state, bool_state, int_state, real_state)
