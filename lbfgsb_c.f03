@@ -2,13 +2,16 @@
 ! tailored to Go.
 module lbfgsb_c
   use, intrinsic :: iso_c_binding
+  use lbfgsb
   implicit none
   private
 
-  integer, parameter :: dp = kind(0d0)
+  ! Public procedures
+  public lbfgsb_minimize
 
   ! Signatures for C callbacks for computing the objective function
   ! value and the objective function gradient
+  public objective_function_c, objective_gradient_c
   abstract interface
 
      ! Signature of objective function C callback
@@ -106,14 +109,6 @@ contains
     real(c_double), intent(in) :: lower_bounds_c(dim_c), upper_bounds_c(dim_c), initial_point_c(dim_c)
     real(c_double), intent(out) :: min_x_c(dim_c), min_f_c, min_g_c(dim_c)
     integer(c_int) :: error_code_c
-
-    ! Named constants specific to L-BFGS-B internals
-    integer, parameter :: &
-         task_size = 60, &
-         char_state_size = task_size, &
-         bool_state_size = 4, &
-         int_state_size = 44, &
-         real_state_size = 29
 
     ! Locals (scalars before arrays)
     ! Fortran versions of arguments
