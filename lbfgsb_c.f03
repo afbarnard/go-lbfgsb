@@ -6,6 +6,8 @@ module lbfgsb_c
   implicit none
   private
 
+  ! TODO enumeration/constants for error codes
+
   ! Public procedures
   public lbfgsb_minimize
 
@@ -32,8 +34,8 @@ module lbfgsb_c
      !
      ! error_code:
      !   Returned error code as defined in TODO
-     ! TODO error codes? error struct with code and message? how wrap errors, if at all?
-     function objective_function_c(dim, point, objective_function_value, callback_data) &
+     function objective_function_c(dim, point, objective_function_value, &
+          callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
@@ -43,6 +45,9 @@ module lbfgsb_c
        ! The pointer must be passed by value because we want the address
        ! of the data not the address of the pointer.
        type(c_ptr), intent(in), value :: callback_data
+       integer(c_int), intent(in), value :: error_message_length
+       character(c_char), intent(out) :: &
+            error_message(error_message_length)
        integer(c_int) :: error_code
      end function objective_function_c
 
@@ -64,7 +69,8 @@ module lbfgsb_c
      !
      ! error_code:
      !   Returned error code as defined in TODO
-     function objective_gradient_c(dim, point, objective_function_gradient, callback_data) &
+     function objective_gradient_c(dim, point, objective_function_gradient, &
+          callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
@@ -72,6 +78,9 @@ module lbfgsb_c
        real(c_double), intent(in) :: point(dim)
        real(c_double), intent(out) :: objective_function_gradient(dim)
        type(c_ptr), intent(in), value :: callback_data
+       integer(c_int), intent(in), value :: error_message_length
+       character(c_char), intent(out) :: &
+            error_message(error_message_length)
        integer(c_int) :: error_code
      end function objective_gradient_c
 
@@ -94,8 +103,8 @@ contains
        initial_point_c, &
        ! Result
        min_x_c, min_f_c, min_g_c, &
-       ! Other
-       debug_c) &
+       ! Error, debug
+       error_message_length_c, error_message_c, debug_c) &
        result(error_code_c) bind(c)
 
     implicit none
@@ -103,17 +112,22 @@ contains
     ! Signature
     type(c_funptr), intent(in), value :: func, grad
     type(c_ptr), intent(in), value :: callback_data
-    integer(c_int), intent(in), value :: dim_c, approximation_size_c, debug_c
+    integer(c_int), intent(in), value :: dim_c, approximation_size_c, &
+         error_message_length_c, debug_c
     real(c_double), intent(in), value :: f_tolerance_c, g_tolerance_c
     integer(c_int), intent(in) :: bounds_control_c(dim_c)
-    real(c_double), intent(in) :: lower_bounds_c(dim_c), upper_bounds_c(dim_c), initial_point_c(dim_c)
-    real(c_double), intent(out) :: min_x_c(dim_c), min_f_c, min_g_c(dim_c)
+    real(c_double), intent(in) :: lower_bounds_c(dim_c), &
+         upper_bounds_c(dim_c), initial_point_c(dim_c)
+    character(c_char), intent(out) :: &
+         error_message_c(error_message_length_c)
+    real(c_double), intent(out) :: min_x_c(dim_c), min_f_c, &
+         min_g_c(dim_c)
     integer(c_int) :: error_code_c
 
     ! Locals (scalars before arrays)
     ! Fortran versions of arguments
-    procedure(objective_function_c), pointer :: func_p
-    procedure(objective_gradient_c), pointer :: grad_p
+    procedure(objective_function_c), pointer :: func_pointer
+    procedure(objective_gradient_c), pointer :: grad_pointer
     integer :: bounds_control(dim_c)
     real(dp) :: lower_bounds(dim_c), upper_bounds(dim_c), point(dim_c)
     ! Variables and memory for L-BFGS-B
@@ -131,13 +145,16 @@ contains
          )
 
     ! Convert inputs from C types to Fortran types
-    call c_f_procpointer(func, func_p)
-    call c_f_procpointer(grad, grad_p)
+    call c_f_procpointer(func, func_pointer)
+    call c_f_procpointer(grad, grad_pointer)
     ! Array copies (TODO are these necessary? i.e. how compatible are the storage and types?)
     bounds_control = bounds_control_c
     lower_bounds = lower_bounds_c
     upper_bounds = upper_bounds_c
     point = initial_point_c
+
+    ! Start with an empty error message (fill entire string with nulls)
+    error_message_c = c_null_char
 
     ! Translate f_tolerance to f_factor.  The convergence tolerance for
     ! the objective function is computed by the L-BFGS-B code as
@@ -173,11 +190,13 @@ contains
           ! Try to get away with not converting Fortran arrays to C
 
           ! Call objective function
-          error_code_c = func_p(dim_c, point, func_value, callback_data)
+          error_code_c = func_pointer(dim_c, point, func_value, &
+               callback_data, error_message_length_c, error_message_c)
           if (error_code_c /= 0) exit
 
           ! Call objective function gradient
-          error_code_c = grad_p(dim_c, point, grad_value, callback_data)
+          error_code_c = grad_pointer(dim_c, point, grad_value, &
+               callback_data, error_message_length_c, error_message_c)
           if (error_code_c /= 0) exit
        end if
 
@@ -193,9 +212,13 @@ contains
        min_f_c = func_value
        min_g_c = grad_value
 
+       ! Copy task into error message
+       call convert_f_c_string(task, error_message_length_c, error_message_c)
+
        ! Check for normal or problematic termination
        if (task(1:4) == 'CONV') then
-          ! Converged.  Normal termination.
+          ! Converged.  Normal termination.  Leave error (task) message
+          ! as may be informative.
           error_code_c = 0
        else if (task(1:4) == 'ABNO') then
           ! Could not satisfy termination conditions.  Result is best
@@ -217,5 +240,24 @@ contains
        min_g_c = 0d0
     end if
   end function lbfgsb_minimize
+
+  ! Converts Fortran strings to C strings ensuring length bounds, null
+  ! chars, and all that.
+  subroutine convert_f_c_string(string_f, string_c_length, string_c)
+    implicit none
+    ! Signature
+    character(len=*), intent(in) :: string_f
+    integer(c_int), intent(in) :: string_c_length
+    character(c_char), intent(out) :: string_c(string_c_length)
+    ! Locals
+    integer :: length
+
+    ! Find the length of the shorter string
+    length = min(len(string_f), string_c_length)
+    ! Copy no more than 'length' characters
+    string_c = string_f(1:length)
+    ! Fill rest of string (if any) with nulls
+    string_c(length+1:string_c_length) = c_null_char
+  end subroutine convert_f_c_string
 
 end module lbfgsb_c

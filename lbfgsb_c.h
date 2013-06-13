@@ -9,7 +9,9 @@ typedef int (*lbfgsb_objective_function_type)
 (int dim,
  double *point,
  double *objective_function_value,
- void *callback_data);
+ void *callback_data,
+ int error_message_length,
+ char *error_message);
 
 // Signature of objective gradient callback.  Matches 'function
 // objective_gradient_c', explained in Fortran module.
@@ -17,7 +19,9 @@ typedef int (*lbfgsb_objective_gradient_type)
 (int dim,
  double *point,
  double *objective_function_gradient,
- void *callback_data);
+ void *callback_data,
+ int error_message_length,
+ char *error_message);
 
 // Signature of L-BFGS-B minimizer.  Matches 'function lbfgsb_minimize',
 // explained in Fortran module.
@@ -49,7 +53,9 @@ int lbfgsb_minimize
  double *min_f,
  double *min_g,
 
- // Other
+ // Error, debug
+ int error_message_length,
+ char *error_message,
  int debug
 );
 
