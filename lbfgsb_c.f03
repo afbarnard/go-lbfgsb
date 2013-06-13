@@ -80,6 +80,7 @@ module lbfgsb_c
 contains
 
   ! L-BFGS-B
+  ! TODO document
   function lbfgsb_minimize( &
        ! Callbacks
        func, grad, callback_data, &
@@ -145,11 +146,16 @@ contains
     upper_bounds = upper_bounds_c
     point = initial_point_c
 
-    ! Translate f_tolerance to f_factor
-    f_factor = f_tolerance / 0d0  ! TODO
+    ! Translate f_tolerance to f_factor.  The convergence tolerance for
+    ! the objective function is computed by the L-BFGS-B code as
+    ! f_factor * epsilon(1d0) but I want to express the tolerance in
+    ! terms of digits of precision, analogous to g_tolerance.
+    f_factor = f_tolerance_c / epsilon(1d0)
 
-    ! Translate debug_c to print_control
-    print_control = debug_c  / 0  ! TODO
+    ! Translate debug_c (zero-based verbosity indicator) approximately
+    ! to print_control (general signed integer with meaning attached to
+    ! certain values)
+    print_control = debug_c - 1
 
     ! Initialize the task
     task = 'START'
@@ -187,13 +193,36 @@ contains
     end do
 
     ! Analyze task and error state to see how to return
-    ! TODO
+    if (error_code_c == 0) then
+       ! Objective and gradient evaluations were OK but L-BFGS-B may not
+       ! be.  Regardless, take what we can from the outputs.
+       min_x_c = point
+       min_f_c = func_value
+       min_g_c = grad_value
 
-    ! Convert outputs from Fortran types to C types
-    min_x_c = point
-    min_f_c = func_value
-    min_g_c = grad_value
-    error_code_c = 0
+       ! Check for normal or problematic termination
+       if (task(1:4) == 'CONV') then
+          ! Converged.  Normal termination.
+          error_code_c = 0
+       else if (task(1:4) == 'ABNO') then
+          ! Could not satisfy termination conditions.  Result is best
+          ! approximation.
+          error_code_c = 1
+       else if (task(1:5) == 'ERROR') then
+          ! Runtime or user error
+          error_code_c = 2
+       else
+          ! Unrecognized task
+          error_code_c = 3
+       end if
+    else
+       ! There was a problem computing the objective or the gradient.
+       ! Fill C types with zeros so callers do not act unwittingly on
+       ! garbage.
+       min_x_c = 0d0
+       min_f_c = 0d0
+       min_g_c = 0d0
+    end if
   end function lbfgsb_minimize
 
 end module lbfgsb_c
