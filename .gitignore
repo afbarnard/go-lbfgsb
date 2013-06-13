@@ -4,3 +4,10 @@
 # General
 *~
 build
+
+# Compilation intermediates
+*.o
+*.mod
+
+# Programs, libraries
+liblbfgsb.a
