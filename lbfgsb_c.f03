@@ -6,10 +6,19 @@ module lbfgsb_c
   implicit none
   private
 
-  ! TODO enumeration/constants for error codes
-
   ! Public procedures
   public lbfgsb_minimize
+
+  ! Public constants and error codes
+  enum, bind(c)
+     enumerator :: &
+          LBFGSB_OK = 0, &  ! No error
+          LBFGSB_APPROXIMATE, &  ! Approximate result; could not satisfy tolerances
+          LBFGSB_RUNTIME_ERROR, &  ! Error in L-BFGS-B or its invocation
+          LBFGSB_FUNCTION_ERROR, &  ! Error in computing objective function
+          LBFGSB_GRADIENT_ERROR, &  ! Error in computing objective gradient
+          LBFGSB_TASK_ERROR  ! Unrecognized task
+  end enum
 
   ! Signatures for C callbacks for computing the objective function
   ! value and the objective function gradient
@@ -33,7 +42,7 @@ module lbfgsb_c
      !   Arbitrary data to be used by the callback
      !
      ! error_code:
-     !   Returned error code as defined in TODO
+     !   Returned error code as defined in enumeration above
      function objective_function_c(dim, point, objective_function_value, &
           callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
@@ -68,7 +77,7 @@ module lbfgsb_c
      !   Arbitrary data to be used by the callback
      !
      ! error_code:
-     !   Returned error code as defined in TODO
+     !   Returned error code as defined in enumeration above
      function objective_gradient_c(dim, point, objective_function_gradient, &
           callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
@@ -192,12 +201,12 @@ contains
           ! Call objective function
           error_code_c = func_pointer(dim_c, point, func_value, &
                callback_data, error_message_length_c, error_message_c)
-          if (error_code_c /= 0) exit
+          if (error_code_c /= LBFGSB_OK) exit
 
           ! Call objective function gradient
           error_code_c = grad_pointer(dim_c, point, grad_value, &
                callback_data, error_message_length_c, error_message_c)
-          if (error_code_c /= 0) exit
+          if (error_code_c /= LBFGSB_OK) exit
        end if
 
        ! Nothing to do for other tasks (NEW_X just means a step was
@@ -205,7 +214,7 @@ contains
     end do
 
     ! Analyze task and error state to see how to return
-    if (error_code_c == 0) then
+    if (error_code_c == LBFGSB_OK) then
        ! Objective and gradient evaluations were OK but L-BFGS-B may not
        ! be.  Regardless, take what we can from the outputs.
        min_x_c = point
@@ -218,23 +227,24 @@ contains
        ! Check for normal or problematic termination
        if (task(1:4) == 'CONV') then
           ! Converged.  Normal termination.  Leave error (task) message
-          ! as may be informative.
-          error_code_c = 0
+          ! as it may be informative.
+          error_code_c = LBFGSB_OK
        else if (task(1:4) == 'ABNO') then
           ! Could not satisfy termination conditions.  Result is best
           ! approximation.
-          error_code_c = 1
+          error_code_c = LBFGSB_APPROXIMATE
        else if (task(1:5) == 'ERROR') then
           ! Runtime or user error
-          error_code_c = 2
+          error_code_c = LBFGSB_RUNTIME_ERROR
        else
           ! Unrecognized task
-          error_code_c = 3
+          error_code_c = LBFGSB_TASK_ERROR
        end if
     else
        ! There was a problem computing the objective or the gradient.
-       ! Fill C types with zeros so callers do not act unwittingly on
-       ! garbage.
+       ! The error message and code were already properly set by the
+       ! call to function/gradient.  Fill C types with zeros so callers
+       ! do not act unwittingly on garbage.
        min_x_c = 0d0
        min_f_c = 0d0
        min_g_c = 0d0
