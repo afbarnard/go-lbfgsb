@@ -34,22 +34,24 @@ module lbfgsb_c
 
      ! Signature of objective function C callback
      !
-     ! dim:
-     !   Dimensionality of the optimization space, the size of the
-     !   arrays used for points, gradients
+     ! 'dim': Dimensionality of the optimization space; the size of the
+     !    arrays used for points, gradients.
      !
-     ! point:
-     !   Point at which to evaluate the objective value.  Array of size
-     !   'dim'.
+     ! 'point': Point at which to evaluate the objective value.  Array
+     !    of size 'dim'.
      !
-     ! objective_function_value:
-     !   Returned value of the objective function
+     ! 'objective_function_value': Returns the value of the objective
+     !    function.
      !
-     ! callback_data:
-     !   Arbitrary data to be used by the callback
+     ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! error_code:
-     !   Returned error code as defined in enumeration above
+     ! 'error_message_length': Usable length of 'error_message_c'
+     !    buffer.  Recommend at least 100.
+     !
+     ! 'error_message': Returns a message explaining the exit status.
+     !
+     ! 'error_code': Returns the exit status code, one of the
+     !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_function_c(dim, point, objective_function_value, &
           callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
@@ -69,22 +71,24 @@ module lbfgsb_c
 
      ! Signature of objective gradient C callback
      !
-     ! dim:
-     !   Dimensionality of the optimization space, the size of the
-     !   arrays used for points, gradients
+     ! 'dim': Dimensionality of the optimization space; the size of the
+     !    arrays used for points, gradients.
      !
-     ! point:
-     !   Point at which to evaluate the objective gradient.  Array of
-     !   size 'dim'.
+     ! 'point': Point at which to evaluate the objective value.  Array
+     !    of size 'dim'.
      !
-     ! objective_function_gradient:
-     !   Returned value of the objective gradient
+     ! 'objective_function_gradient': Returns the value of the objective
+     !    gradient.
      !
-     ! callback_data:
-     !   Arbitrary data to be used by the callback
+     ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! error_code:
-     !   Returned error code as defined in enumeration above
+     ! 'error_message_length': Usable length of 'error_message_c'
+     !    buffer.  Recommend at least 100.
+     !
+     ! 'error_message': Returns a message explaining the exit status.
+     !
+     ! 'error_code': Returns the exit status code, one of the
+     !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_gradient_c(dim, point, objective_function_gradient, &
           callback_data, error_message_length, error_message) &
           result(error_code) bind(c)
@@ -169,14 +173,16 @@ contains
   !
   ! 'min_g_c': Returns the gradient at the minimum, an array.
   !
-  ! 'error_message_length_c': Usable length of 'error_message_c'.
+  ! 'error_message_length_c': Usable length of 'error_message_c' buffer.
+  !    Recommend at least 100.
   !
   ! 'error_message_c': Message explaining the exit status.
   !
   ! 'debug_c': Output verbosity level where 0 means no output and larger
   !    values mean increasing output.
   !
-  ! 'error_code_c': Exit status code.  One of LBFGSB_EXIT_* constants.
+  ! 'error_code_c': Returns the exit status code, one of the
+  !    LBFGSB_STATUS_* constants defined in enumeration above.
   function lbfgsb_minimize( &
        ! Callbacks
        func, grad, callback_data, &
