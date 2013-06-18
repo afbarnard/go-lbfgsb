@@ -104,8 +104,79 @@ module lbfgsb_c
 
 contains
 
-  ! L-BFGS-B
-  ! TODO document
+  ! lbfgsb_minimize optimizes the given objective within the given
+  ! bounds using the L-BFGS-B optimization algorithm.  The objective is
+  ! specified via its value and gradient functions.  Returns an exit
+  ! status code.  Throughout, 'x' refers to points, 'f' refers to the
+  ! objective function, 'g' refers to the gradient of the objective
+  ! function.
+  !
+  ! 'func': Pointer to objective value function whose signature is given
+  !    by objective_function_c or lbfgsb_objective_function_type.
+  !
+  ! 'grad': Pointer to objective gradient function whose signature is
+  !    given by objective_gradient_c or lbfgsb_objective_gradient_type.
+  !
+  ! 'callback_data': Pointer to user-specified data passed to 'func' and
+  !    'grad' when they are called.  May be null (or anything) because
+  !    this function does not process it, only passes it along.
+  !
+  ! 'dim_c': Dimensionality of the optimization space; length of the
+  !    arrays 'initial_point_c', 'min_x_c', 'min_g_c',
+  !    'bounds_control_c', 'lower_bounds_c', 'upper_bounds_c'.
+  !
+  ! 'bounds_control_c': Array specifying the type of bounds for each
+  !    dimension.
+  !
+  !    bounds_control_c[i] =
+  !       * 0 means x[i] is unbounded,
+  !       * 1 means x[i] has a lower bound in lower_bounds_c[i],
+  !       * 2 means x[i] has both lower and upper bounds,
+  !       * 3 means x[i] has an upper bound in upper_bounds_c[i].
+  !
+  ! 'lower_bounds_c': Array of lower bounds.  lower_bounds_c[i] is
+  !    accessed only when indicated in bounds_control_c[i].
+  !
+  ! 'upper_bounds_c': Array of upper bounds.  upper_bounds_c[i] is
+  !    accessed only when indicated in bounds_control_c[i].
+  !
+  ! 'approximation_size_c': The amount of history (points and gradients)
+  !    to store and use to approximate the inverse Hessian matrix.  More
+  !    history allows a better approximation and uses more memory.  The
+  !    recommended range is [3,20].
+  !
+  ! 'f_tolerance_c': Precision of objective function required for
+  !    convergence.  That is, specifying 1e-5 achieves about 5 digits of
+  !    precision of the objective function value.  Convergence at the
+  !    i-th iteration requires:
+  !
+  !    (f(x[i-1]) - f(x[i])) / max(|f(x[i-1])|,|f(x[i])|,1) <= f_tolerance.
+  !
+  ! 'g_tolerance_c': Maximum magnitude of objective gradient allowed for
+  !    convergence.  That is, a value of 1e-5 specifies the gradient
+  !    must equal zero to at least 5 digits.  Convergence at the i-th
+  !    iteration requires:
+  !
+  !    |P(g(x[i]))|inf <= g_tolerance
+  !
+  !    where P(g(x)) is the projected gradient at x.
+  !
+  ! 'initial_point_c': Point from which minimization starts, x[0].
+  !
+  ! 'min_x_c': Returns the location of the minimum, an array.
+  !
+  ! 'min_f_c': Returns the objective function value at the minimum.
+  !
+  ! 'min_g_c': Returns the gradient at the minimum, an array.
+  !
+  ! 'error_message_length_c': Usable length of 'error_message_c'.
+  !
+  ! 'error_message_c': Message explaining the exit status.
+  !
+  ! 'debug_c': Output verbosity level where 0 means no output and larger
+  !    values mean increasing output.
+  !
+  ! 'error_code_c': Exit status code.  One of LBFGSB_EXIT_* constants.
   function lbfgsb_minimize( &
        ! Callbacks
        func, grad, callback_data, &
