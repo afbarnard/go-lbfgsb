@@ -1,3 +1,10 @@
+! Module lbfgsb provides a modern Fortran interface to the L-BFGS-B
+! optimization algorithm written in FORTRAN 77 by Nocedal et al.  The
+! idea is this interface will integrate with all of the modern Fortran
+! code while implicitly integrating with the L-BFGS-B FORTRAN 77 code.
+! (There is no way to enforce this interface with the old code without
+! integrating it into the old code.  This could be done relatively
+! easily but I have chosen to leave the original as is for now.)
 module lbfgsb
   implicit none
   private

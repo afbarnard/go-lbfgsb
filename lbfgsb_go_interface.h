@@ -1,4 +1,4 @@
-// C declarations for code used by Go to interface with the L-BFGS-B
+// Declarations for C code used by Go to interface with the L-BFGS-B
 // Fortran library.
 
 #ifndef __LBFGSB_GO_INTERFACE_H__

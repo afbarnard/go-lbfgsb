@@ -1,5 +1,8 @@
-// Go wrapper for Fortran implementation of L-BFGS-B optimization
-// algorithm.
+// Go package that provides an interface to the Fortran implementation
+// of the L-BFGS-B optimization algorithm.  The Fortran code is provided
+// as a C-compatible library and this is the Go API for that library.
+// There is a sliver of C code (in lbfgsb_go_interface.*) needed to
+// connect this Go package to the Fortran library.
 
 package lbfgsb
 

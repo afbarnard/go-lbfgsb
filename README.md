@@ -62,6 +62,12 @@ useful, stable, released package pretty quickly.
 Go-Fortran Interface
 --------------------
 
+The architecture of this software has two main pieces: a library with a
+C API (but written in modern Fortran), and a Go package providing the
+functionality of the library as a Go API.  The library is designed to be
+used from both Fortran and C, and so could work with other languages
+besides Go.
+
 I have endeavored to make this a good Go-Fortran interface example as
 well as a useful package.  Accordingly, I have included my experimental
 interface prototype code to be used for learning and experimenting with

@@ -1,5 +1,9 @@
-! Module to provide a simple, modern C interface to L-BFGS-B that is
-! tailored to Go.
+! Module lbfgsb_c provides a simple, modern C interface to the L-BFGS-B
+! FORTRAN 77 code.  This module compiles together with module lbfgsb and
+! the L-BFGS-B FORTRAN 77 code to create a L-BFGS-B library with a C
+! API.  The Go package then uses the C API.  My goal is to implement all
+! of the necessary functionality of the library in Fortran so it can be
+! used by other code and not just Go.
 module lbfgsb_c
   use, intrinsic :: iso_c_binding
   use lbfgsb

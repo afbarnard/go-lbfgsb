@@ -23,3 +23,18 @@ Directories
 * `prototype`: Code for experimenting with foreign function interfaces
   between Fortran, C, and Go.  Use it as a seed for your own
   experiments!
+
+
+Files
+-----
+
+Files are either part of the L-BFGS-B library or the Go package.
+
+* `lbfgsb.f03`: Fortran 2003 interface to L-BFGS-B FORTRAN 77 code.
+  This and the code in `lbfgsb/` are the core of the library.
+
+* `lbfgsb_c.*`: C declarations and Fortran 2003 code for library C API.
+
+* `*.go`: L-BFGS-B Go package.
+
+* `lbfgsb_go_interface.*`: C files for Go package.
