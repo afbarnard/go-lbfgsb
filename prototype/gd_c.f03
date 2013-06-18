@@ -1,3 +1,6 @@
+! Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+! LICENSE.txt for details.
+
 ! C interoperability for Fortran gd module.  Needs Fortran 2003 for
 ! ISO_C_BINDING, procedure pointers, and procedure components.
 ! (Procedure components require GCC 4.6 or later; other stuff works with

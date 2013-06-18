@@ -38,3 +38,7 @@ Files are either part of the L-BFGS-B library or the Go package.
 * `*.go`: L-BFGS-B Go package.
 
 * `lbfgsb_go_interface.*`: C files for Go package.
+
+
+Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+LICENSE.txt for details.

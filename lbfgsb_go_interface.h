@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // Declarations for C code used by Go to interface with the L-BFGS-B
 // Fortran library.
 

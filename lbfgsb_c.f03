@@ -1,3 +1,6 @@
+! Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+! LICENSE.txt for details.
+
 ! Module lbfgsb_c provides a simple, modern C interface to the L-BFGS-B
 ! FORTRAN 77 code.  This module compiles together with module lbfgsb and
 ! the L-BFGS-B FORTRAN 77 code to create a L-BFGS-B library with a C

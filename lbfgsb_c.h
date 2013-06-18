@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // C declarations for Fortran types and procedures bound (exposed) to C.
 
 #ifndef __LBFGSB_C_H__

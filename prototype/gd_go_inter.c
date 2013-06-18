@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // C wrapper for Fortran gradient descent implementation.  This is
 // needed solely to pass the addresses of the exported Go callbacks to C
 // because Go and C function pointers are not interoperable.  (Otherwise

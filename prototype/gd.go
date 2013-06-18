@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // Go-Fortran gradient descent package (Go-Fortran optimization
 // interface prototype)
 

@@ -1,3 +1,6 @@
+# Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+# LICENSE.txt for details.
+
 # Makes the Fortran and C parts of this experimental package.  Can also
 # build the Go bits for convenience.
 

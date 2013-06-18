@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // Go version of Fortran main.  Runs the Fortran gradient descent via C
 // with Go callbacks for evaluation of objective function and gradient.
 

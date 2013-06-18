@@ -141,3 +141,7 @@ procedures and has no facility for callback data.  These limitations
 necessitate the intermediary adapters but such limitations would not
 occur in a tailored API.  The complexity of a tailored and integrated
 Go-Fortran API should be similar to the C-Fortran one above.
+
+
+Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+LICENSE.txt for details.

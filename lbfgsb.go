@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // Go package that provides an interface to the Fortran implementation
 // of the L-BFGS-B optimization algorithm.  The Fortran code is provided
 // as a C-compatible library and this is the Go API for that library.

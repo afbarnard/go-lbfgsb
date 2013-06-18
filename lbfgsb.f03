@@ -1,3 +1,6 @@
+! Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+! LICENSE.txt for details.
+
 ! Module lbfgsb provides a modern Fortran interface to the L-BFGS-B
 ! optimization algorithm written in FORTRAN 77 by Nocedal et al.  The
 ! idea is this interface will integrate with all of the modern Fortran

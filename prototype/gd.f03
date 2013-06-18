@@ -1,3 +1,6 @@
+! Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+! LICENSE.txt for details.
+
 ! Simple implementation of gradient descent for Go-Fortran-Go interface
 ! prototyping.
 

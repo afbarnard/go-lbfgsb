@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// LICENSE.txt for details.
+
 // C declarations used by Go
 
 #ifndef __GD_GO_INTER_H__
