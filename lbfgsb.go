@@ -16,7 +16,6 @@ package lbfgsb
 import "C"
 
 import (
-	"fmt"
 	"reflect"
 	"unsafe"
 )
@@ -24,7 +23,7 @@ import (
 // Lbfgsb provides the functionality of the Fortran L-BFGS-B optimizer
 // as a Go object.
 type Lbfgsb struct {
-	// TODO
+	// TODO Lbfgs struct
 }
 
 // Minimize optimizes the given objective using the L-BFGS-B algorithm.
@@ -59,9 +58,9 @@ func (bfgs Lbfgsb) Minimize(
 	approximation_size_c := C.int(5)
 	f_tolerance_c := C.double(1e-6)
 	g_tolerance_c := C.double(1e-6)
-	error_message_length_c := C.int(100)
-	var dummy_message [101]C.char
-	error_message_c := (*C.char)(&dummy_message[0])
+	status_message_length_c := C.int(100)
+	var dummy_message [100]C.char
+	status_message_c := (*C.char)(&dummy_message[0])
 	debug_c := C.int(0)
 	// The following arrays may not be iteroperably type-safe but this
 	// is how they did it on the Cgo page: http://golang.org/cmd/cgo/
@@ -74,20 +73,20 @@ func (bfgs Lbfgsb) Minimize(
 	var min_g_c *C.double = (*C.double)(&minimum.G[0])
 
 	// Call the actual L-BFGS-B procedure
-	error_code_c := C.lbfgsb_minimize_c(
+	status_code_c := C.lbfgsb_minimize_c(
 		callback_data_c, dim_c,
 		bounds_control_c, lower_bounds_c, upper_bounds_c,
 		approximation_size_c, f_tolerance_c, g_tolerance_c,
 		x0_c, min_x_c, min_f_c, min_g_c,
-		error_message_length_c, error_message_c, debug_c,
+		status_message_length_c, status_message_c, debug_c,
 	)
 
 	// Convert outputs
-	// TODO properly translate exit status using enumerated error codes
-	error_code := int(error_code_c)
-	if error_code != 0 {
-		panic(fmt.Errorf("Gradient descent failed with error code: %d", error_code))
-	}
+	// Exit status codes match between ExitStatusCode and the C enum
+	exitStatus.Code = ExitStatusCode(status_code_c)
+	exitStatus.Message = C.GoStringN(status_message_c, status_message_length_c)
+	// Minimum already populated because pointers to its members were
+	// passed into C/Fortran
 
 	return
 }
@@ -107,8 +106,8 @@ type callbackData struct {
 func go_objective_function_callback(
 	dim_c C.int, point_c, value_c *C.double,
 	callback_data_c unsafe.Pointer,
-	error_message_length C.int, error_message *C.char) (
-		error_code_c C.int) {
+	status_message_length C.int, status_message *C.char) (
+		status_code_c C.int) {
 
 	var point []float64
 
@@ -135,8 +134,8 @@ func go_objective_function_callback(
 func go_objective_gradient_callback(
 	dim_c C.int, point_c, gradient_c *C.double,
 	callback_data_c unsafe.Pointer,
-	error_message_length C.int, error_message *C.char) (
-		error_code_c C.int) {
+	status_message_length C.int, status_message *C.char) (
+		status_code_c C.int) {
 
 	var point, gradient, grad_ret []float64
 
