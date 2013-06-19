@@ -250,8 +250,7 @@ contains
     ! Fortran versions of arguments
     procedure(objective_function_c), pointer :: func_pointer
     procedure(objective_gradient_c), pointer :: grad_pointer
-    integer :: bounds_control(dim_c)
-    real(dp) :: lower_bounds(dim_c), upper_bounds(dim_c), point(dim_c)
+    real(dp) :: point(dim_c)
     ! Variables and memory for L-BFGS-B
     integer :: print_control
     real(dp) :: func_value, f_factor
@@ -271,11 +270,12 @@ contains
     ! Convert inputs from C types to Fortran types
     call c_f_procpointer(func, func_pointer)
     call c_f_procpointer(grad, grad_pointer)
-    ! Array copies (TODO are these necessary? i.e. how compatible are the storage and types?)
-    bounds_control = bounds_control_c
-    lower_bounds = lower_bounds_c
-    upper_bounds = upper_bounds_c
+    ! Copy initial_point_c to point because point is written to
     point = initial_point_c
+    ! Other arrays do not need to be copied because there binary
+    ! representations are compatible (but I'm not sure if this will
+    ! always be the case).  Plus the other arrays are only read, not
+    ! written.
 
     ! Start with an empty status message (fill entire string with nulls)
     status_message_c = c_null_char
@@ -304,7 +304,7 @@ contains
 
        ! Call L-BFGS-B code
        call setulb(dim_c, approximation_size_c, point, &
-            lower_bounds, upper_bounds, bounds_control, &
+            lower_bounds_c, upper_bounds_c, bounds_control_c, &
             func_value, grad_value, &
             f_factor, g_tolerance_c, &
             working_real_memory, working_int_memory, &
