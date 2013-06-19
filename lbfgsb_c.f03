@@ -74,7 +74,8 @@ module lbfgsb_c
      ! 'status_message_length': Usable length of 'status_message_c'
      !    buffer.  Recommend at least 100.
      !
-     ! 'status_message': Returns a message explaining the exit status.
+     ! 'status_message': Returns a message (null-terminated C string)
+     !    explaining the exit status.
      !
      ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
@@ -111,7 +112,8 @@ module lbfgsb_c
      ! 'status_message_length': Usable length of 'status_message_c'
      !    buffer.  Recommend at least 100.
      !
-     ! 'status_message': Returns a message explaining the exit status.
+     ! 'status_message': Returns a message (null-terminated C string)
+     !    explaining the exit status.
      !
      ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
@@ -205,7 +207,8 @@ contains
   ! 'status_message_length_c': Usable length of 'status_message_c'
   !    buffer.  Recommend at least 100.
   !
-  ! 'status_message_c': Message explaining the exit status.
+  ! 'status_message_c': Message (null-terminated C string) explaining
+  !    the exit status.
   !
   ! 'debug_c': Output verbosity level where 0 means no output and larger
   !    values mean increasing output.
@@ -288,7 +291,7 @@ contains
 
     ! Translate debug_c (zero-based verbosity indicator) approximately
     ! to print_control (general signed integer with meaning attached to
-    ! certain values)
+    ! certain values).  TODO consider debug vs. print_control.
     print_control = debug_c - 1
 
     ! Initialize the state and task
@@ -477,11 +480,12 @@ contains
     ! Locals
     integer :: length
 
-    ! Find the length of the shorter string
-    length = min(len(string_f), string_c_length)
+    ! Find the length of the shorter string.  Leave room for a
+    ! terminating null character.
+    length = min(len(string_f), string_c_length - 1)
     ! Copy no more than 'length' characters
     string_c = string_f(1:length)
-    ! Fill rest of string (if any) with nulls
+    ! Fill rest of string (at least one character) with nulls
     string_c(length+1:string_c_length) = c_null_char
   end subroutine convert_f_c_string
 
