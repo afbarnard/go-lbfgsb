@@ -16,15 +16,41 @@ module lbfgsb_c
   ! Public procedures
   public lbfgsb_minimize
 
-  ! Public constants and error codes
+  ! Public status codes describing the exit or error status of L-BFGS-B.
+  ! Multiple statuses are necessary because success in optimization is
+  ! more complex than a single flag or error.  There are four exit
+  ! statuses and two runtime error statuses.
+  !
+  ! 1. Success.  Normal termination having converged.
+  !
+  ! 2. Approximate success.  Normal operation resulting in a more
+  ! approximate answer.  For example, unable to meet termination
+  ! tolerances.
+  !
+  ! 3. Warning.  The result could be OK, but there were some issues that
+  ! may have reduced the quality of the result and require examination.
+  ! For example, slight numerical problems, exceeding iteration or time
+  ! bounds.
+  !
+  ! 4. Failure of optimization.  For example, a necessary condition of
+  ! the algorithm was not met, severe numerical problems.  (This status
+  ! includes failures to evaluate the objective function or objective
+  ! gradient.)
+  !
+  ! 5. Usage error.  For example, invalid constraints, bad parameters.
+  ! Responsibility is on the caller.
+  !
+  ! 6. Internal error.  Other runtime or programming/logic error which
+  ! may be a bug.  Responsibility is on this package.
   enum, bind(c)
+     ! Constants automatically increment
      enumerator :: &
-          LBFGSB_OK = 0, &  ! No error
-          LBFGSB_APPROXIMATE, &  ! Approximate result; could not satisfy tolerances
-          LBFGSB_RUNTIME_ERROR, &  ! Error in L-BFGS-B or its invocation
-          LBFGSB_FUNCTION_ERROR, &  ! Error in computing objective function
-          LBFGSB_GRADIENT_ERROR, &  ! Error in computing objective gradient
-          LBFGSB_TASK_ERROR  ! Unrecognized task
+          LBFGSB_STATUS_SUCCESS = 0, &
+          LBFGSB_STATUS_APPROXIMATE, &
+          LBFGSB_STATUS_WARNING, &
+          LBFGSB_STATUS_FAILURE, &
+          LBFGSB_STATUS_USAGE_ERROR, &
+          LBFGSB_STATUS_INTERNAL_ERROR
   end enum
 
   ! Signatures for C callbacks for computing the objective function
@@ -32,7 +58,7 @@ module lbfgsb_c
   public objective_function_c, objective_gradient_c
   abstract interface
 
-     ! Signature of objective function C callback
+     ! Signature of objective function C callback.
      !
      ! 'dim': Dimensionality of the optimization space; the size of the
      !    arrays used for points, gradients.
@@ -45,16 +71,16 @@ module lbfgsb_c
      !
      ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! 'error_message_length': Usable length of 'error_message_c'
+     ! 'status_message_length': Usable length of 'status_message_c'
      !    buffer.  Recommend at least 100.
      !
-     ! 'error_message': Returns a message explaining the exit status.
+     ! 'status_message': Returns a message explaining the exit status.
      !
-     ! 'error_code': Returns the exit status code, one of the
+     ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_function_c(dim, point, objective_function_value, &
-          callback_data, error_message_length, error_message) &
-          result(error_code) bind(c)
+          callback_data, status_message_length, status_message) &
+          result(status) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
        integer(c_int), intent(in), value :: dim
@@ -63,13 +89,13 @@ module lbfgsb_c
        ! The pointer must be passed by value because we want the address
        ! of the data not the address of the pointer.
        type(c_ptr), intent(in), value :: callback_data
-       integer(c_int), intent(in), value :: error_message_length
+       integer(c_int), intent(in), value :: status_message_length
        character(c_char), intent(out) :: &
-            error_message(error_message_length)
-       integer(c_int) :: error_code
+            status_message(status_message_length)
+       integer(c_int) :: status
      end function objective_function_c
 
-     ! Signature of objective gradient C callback
+     ! Signature of objective gradient C callback.
      !
      ! 'dim': Dimensionality of the optimization space; the size of the
      !    arrays used for points, gradients.
@@ -82,29 +108,32 @@ module lbfgsb_c
      !
      ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! 'error_message_length': Usable length of 'error_message_c'
+     ! 'status_message_length': Usable length of 'status_message_c'
      !    buffer.  Recommend at least 100.
      !
-     ! 'error_message': Returns a message explaining the exit status.
+     ! 'status_message': Returns a message explaining the exit status.
      !
-     ! 'error_code': Returns the exit status code, one of the
+     ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_gradient_c(dim, point, objective_function_gradient, &
-          callback_data, error_message_length, error_message) &
-          result(error_code) bind(c)
+          callback_data, status_message_length, status_message) &
+          result(status) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
        integer(c_int), intent(in), value :: dim
        real(c_double), intent(in) :: point(dim)
        real(c_double), intent(out) :: objective_function_gradient(dim)
        type(c_ptr), intent(in), value :: callback_data
-       integer(c_int), intent(in), value :: error_message_length
+       integer(c_int), intent(in), value :: status_message_length
        character(c_char), intent(out) :: &
-            error_message(error_message_length)
-       integer(c_int) :: error_code
+            status_message(status_message_length)
+       integer(c_int) :: status
      end function objective_gradient_c
 
   end interface
+
+  ! Private constants
+  integer, parameter :: state_size = 14
 
 contains
 
@@ -173,16 +202,16 @@ contains
   !
   ! 'min_g_c': Returns the gradient at the minimum, an array.
   !
-  ! 'error_message_length_c': Usable length of 'error_message_c' buffer.
-  !    Recommend at least 100.
+  ! 'status_message_length_c': Usable length of 'status_message_c'
+  !    buffer.  Recommend at least 100.
   !
-  ! 'error_message_c': Message explaining the exit status.
+  ! 'status_message_c': Message explaining the exit status.
   !
   ! 'debug_c': Output verbosity level where 0 means no output and larger
   !    values mean increasing output.
   !
-  ! 'error_code_c': Returns the exit status code, one of the
-  !    LBFGSB_STATUS_* constants defined in enumeration above.
+  ! 'status_c': Returns the exit status code, one of the LBFGSB_STATUS_*
+  !    constants defined in enumeration above.
   function lbfgsb_minimize( &
        ! Callbacks
        func, grad, callback_data, &
@@ -197,8 +226,8 @@ contains
        ! Result
        min_x_c, min_f_c, min_g_c, &
        ! Error, debug
-       error_message_length_c, error_message_c, debug_c) &
-       result(error_code_c) bind(c)
+       status_message_length_c, status_message_c, debug_c) &
+       result(status_c) bind(c)
 
     implicit none
 
@@ -206,16 +235,16 @@ contains
     type(c_funptr), intent(in), value :: func, grad
     type(c_ptr), intent(in), value :: callback_data
     integer(c_int), intent(in), value :: dim_c, approximation_size_c, &
-         error_message_length_c, debug_c
+         status_message_length_c, debug_c
     real(c_double), intent(in), value :: f_tolerance_c, g_tolerance_c
     integer(c_int), intent(in) :: bounds_control_c(dim_c)
     real(c_double), intent(in) :: lower_bounds_c(dim_c), &
          upper_bounds_c(dim_c), initial_point_c(dim_c)
     character(c_char), intent(out) :: &
-         error_message_c(error_message_length_c)
+         status_message_c(status_message_length_c)
     real(c_double), intent(out) :: min_x_c(dim_c), min_f_c, &
          min_g_c(dim_c)
-    integer(c_int) :: error_code_c
+    integer(c_int) :: status_c
 
     ! Locals (scalars before arrays)
     ! Fortran versions of arguments
@@ -228,6 +257,8 @@ contains
     real(dp) :: func_value, f_factor
     character(len=task_size) :: task
     character(len=char_state_size) :: char_state
+    character(len=state_size) :: state
+    character(len=2*task_size) :: message
     logical :: bool_state(bool_state_size)
     integer :: int_state(int_state_size), &
          working_int_memory(3 * dim_c)
@@ -246,8 +277,8 @@ contains
     upper_bounds = upper_bounds_c
     point = initial_point_c
 
-    ! Start with an empty error message (fill entire string with nulls)
-    error_message_c = c_null_char
+    ! Start with an empty status message (fill entire string with nulls)
+    status_message_c = c_null_char
 
     ! Translate f_tolerance to f_factor.  The convergence tolerance for
     ! the objective function is computed by the L-BFGS-B code as
@@ -260,14 +291,16 @@ contains
     ! certain values)
     print_control = debug_c - 1
 
-    ! Initialize the task
-    task = 'START'
+    ! Initialize the state and task
+    state = 'START'
+    task = state
 
     ! Loop to do tasks and coordinate the optimization
     do while ( &
-         task(1:2) == 'FG' .or. &
-         task(1:5) == 'NEW_X' .or. &
-         task(1:5) == 'START')
+         state(1:7) == 'EVAL_FG' .or. &
+         state(1:5) == 'NEW_X' .or. &
+         state(1:7) == 'WARNING' .or. &
+         state(1:5) == 'START')
 
        ! Call L-BFGS-B code
        call setulb(dim_c, approximation_size_c, point, &
@@ -278,52 +311,64 @@ contains
             task, print_control, &
             char_state, bool_state, int_state, real_state)
 
-       ! Do the 'calculate function and gradient' task
-       if (task(1:2) == 'FG') then
-          ! Try to get away with not converting Fortran arrays to C
+       ! Interpret the returned task
+       call interpret_task(task, state, message)
+
+       ! Act on the current state
+       if (state(1:7) == 'EVAL_FG') then
+          ! Calculate function and gradient.  Try to get away with not
+          ! converting Fortran arrays to C.
 
           ! Call objective function
-          error_code_c = func_pointer(dim_c, point, func_value, &
-               callback_data, error_message_length_c, error_message_c)
-          if (error_code_c /= LBFGSB_OK) exit
+          status_c = func_pointer(dim_c, point, func_value, &
+               callback_data, status_message_length_c, status_message_c)
+          if (status_c /= LBFGSB_STATUS_SUCCESS) exit
 
           ! Call objective function gradient
-          error_code_c = grad_pointer(dim_c, point, grad_value, &
-               callback_data, error_message_length_c, error_message_c)
-          if (error_code_c /= LBFGSB_OK) exit
+          status_c = grad_pointer(dim_c, point, grad_value, &
+               callback_data, status_message_length_c, status_message_c)
+          if (status_c /= LBFGSB_STATUS_SUCCESS) exit
+       else if (state(1:7) == 'WARNING') then
+          ! TODO handle warnings
+       else if (state(1:5) == 'NEW_X') then
+          ! TODO handle logging
        end if
-
-       ! Nothing to do for other tasks (NEW_X just means a step was
-       ! taken to the current x)
     end do
 
-    ! Analyze task and error state to see how to return
-    if (error_code_c == LBFGSB_OK) then
+    ! Analyze status and state to see how to return
+    if (status_c == LBFGSB_STATUS_SUCCESS) then
        ! Objective and gradient evaluations were OK but L-BFGS-B may not
        ! be.  Regardless, take what we can from the outputs.
        min_x_c = point
        min_f_c = func_value
        min_g_c = grad_value
 
-       ! Copy task into error message
-       call convert_f_c_string(task, error_message_length_c, error_message_c)
-
        ! Check for normal or problematic termination
-       if (task(1:4) == 'CONV') then
+       select case (state)
+       case ('CONVERGENCE')
           ! Converged.  Normal termination.  Leave error (task) message
           ! as it may be informative.
-          error_code_c = LBFGSB_OK
-       else if (task(1:4) == 'ABNO') then
+          status_c = LBFGSB_STATUS_SUCCESS
+       case ('ABNORMAL')
           ! Could not satisfy termination conditions.  Result is best
           ! approximation.
-          error_code_c = LBFGSB_APPROXIMATE
-       else if (task(1:5) == 'ERROR') then
-          ! Runtime or user error
-          error_code_c = LBFGSB_RUNTIME_ERROR
-       else
-          ! Unrecognized task
-          error_code_c = LBFGSB_TASK_ERROR
-       end if
+          status_c = LBFGSB_STATUS_APPROXIMATE
+       case ('WARNING')
+          status_c = LBFGSB_STATUS_WARNING
+       case ('ERROR_USAGE')
+          ! User error
+          status_c = LBFGSB_STATUS_USAGE_ERROR
+       case ('ERROR_INTERNAL')
+          ! Runtime or internal error
+          status_c = LBFGSB_STATUS_INTERNAL_ERROR
+       case default
+          ! Unrecognized state
+          status_c = LBFGSB_STATUS_INTERNAL_ERROR
+          message = 'Error: Unrecognized state: '//task
+       end select
+
+       ! Copy task message into status message
+       call convert_f_c_string(message, status_message_length_c, status_message_c)
     else
        ! There was a problem computing the objective or the gradient.
        ! The error message and code were already properly set by the
@@ -334,6 +379,92 @@ contains
        min_g_c = 0d0
     end if
   end function lbfgsb_minimize
+
+  ! Interprets the various task strings coming out of L-BFGS-B.  Maps
+  ! them to concrete, disjoint states which are easier and less
+  ! ambiguous to handle.  Also extracts the message, if any.
+  !
+  ! The concrete, disjoint states are START, EVAL_FG, NEW_X,
+  ! CONVERGENCE, ABNORMAL, WARNING, ERROR_USAGE, ERROR_INTERNAL
+  ! padded to 'state_size' characters.
+  subroutine interpret_task(task, state, message)
+    character(len=*), intent(in) :: task
+    character(len=state_size), intent(out) :: state
+    character(len=*), intent(out) :: message
+
+    ! Fill the state and message with spaces
+    state = ' '
+    message = ' '
+
+    ! Discriminate the tasks based on the initial characters
+    select case (task(1:5))
+    case ('START')
+       state = 'START'
+    case ('FG', 'FG_LN', 'FG_ST')
+       state = 'EVAL_FG'
+    case ('NEW_X')
+       state = 'NEW_X'
+    case ('CONVE')
+       state = 'CONVERGENCE'
+       message = task(14:)
+    case ('ABNOR')
+       state = 'ABNORMAL'
+       message = task
+    case ('WARNI')
+       ! All the warnings appear to relate only to the line search code
+       ! and so may not get back to here
+       state = 'WARNING'
+       message = task(10:)
+    case ('ERROR')
+       ! It appears all the reported errors are usage errors, rather
+       ! than, say division by zero
+       state = 'ERROR_USAGE'
+       message = task(8:)
+    case default
+       ! Unrecognized task
+       state = 'ERROR_INTERNAL'
+       message = 'Error: Unrecognized task: '//task
+    end select
+
+    ! Assigned task values
+    ! 'FG_START'
+    ! 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL'
+    ! 'ABNORMAL_TERMINATION_IN_LNSRCH'
+    ! 'RESTART_FROM_LNSRCH'
+    ! 'CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL'
+    ! 'CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH'
+    ! 'ERROR: N .LE. 0'
+    ! 'ERROR: M .LE. 0'
+    ! 'ERROR: FACTR .LT. 0'
+    ! 'ERROR: INVALID NBD'
+    ! 'ERROR: NO FEASIBLE SOLUTION'
+    ! 'FG_LNSRCH'
+    ! 'NEW_X'
+    ! Line search
+    ! 'ERROR: STP .LT. STPMIN'
+    ! 'ERROR: STP .GT. STPMAX'
+    ! 'ERROR: INITIAL G .GE. ZERO'
+    ! 'ERROR: FTOL .LT. ZERO'
+    ! 'ERROR: GTOL .LT. ZERO'
+    ! 'ERROR: XTOL .LT. ZERO'
+    ! 'ERROR: STPMIN .LT. ZERO'
+    ! 'ERROR: STPMAX .LT. STPMIN'
+    ! 'FG'
+    ! 'WARNING: ROUNDING ERRORS PREVENT PROGRESS'
+    ! 'WARNING: XTOL TEST SATISFIED'
+    ! 'WARNING: STP = STPMAX'
+    ! 'WARNING: STP = STPMIN'
+    ! 'CONVERGENCE'
+    !
+    ! Compared task values
+    ! 'START'
+    ! 'ERROR'
+    ! 'FG_LN'
+    ! 'NEW_X'
+    ! 'FG_ST'
+    ! 'STOP'
+    ! 'CPU'
+  end subroutine interpret_task
 
   ! Converts Fortran strings to C strings ensuring length bounds, null
   ! chars, and all that.
