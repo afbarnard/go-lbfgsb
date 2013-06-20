@@ -27,35 +27,19 @@ package main
 import (
 	"fmt"
 
-	lbfgsb "github.com/afbarnard/go-lbfgsb"
+	lbfgsb ".."
 )
 
 func main() {
 	fmt.Printf("----- Go L-BFGS-B Example Program -----\n\n")
 
-	// Create default L-BFGS-B optimizer
+	// Create default L-BFGS-B optimizer.  The solver adapts to any
+	// initial dimensionality but then must stick with that
+	// dimensionality.
 	optimizer := new(lbfgsb.Lbfgsb)
 
-	// Create Rosenbrock objective function
-	rosenObjective := new(RosenbrockFunction)
-	rosenMin := lbfgsb.PointValueGradient{
-		X: []float64{1.0, 1.0},
-		F: 0.0,
-		G: []float64{0.0, 0.0},
-	}
-
-	// Minimize Rosenbrock without additional parameters
-	x0 := []float64{10.0, 10.0}
-	minimum, exitStatus := optimizer.Minimize(rosenObjective, x0, nil)
-	fmt.Printf("----- Rosenbrock Function -----\nexpected: %v\n minimum: %v\n  status: %v\n\n",
-		rosenMin, minimum, exitStatus)
-
-	// Create sphere objective function using an objective function
-	// object to combine arbitrary functions
-	sphereObjective := lbfgsb.GeneralObjectiveFunction{
-		Function: SphereFunction,
-		Gradient: SphereGradient,
-	}
+	// Create sphere objective function as FunctionWithGradient object
+	sphereObjective := new(SphereFunction)
 	sphereMin := lbfgsb.PointValueGradient{
 		X: []float64{0.0, 0.0, 0.0, 0.0, 0.0},
 		F: 0.0,
@@ -63,19 +47,60 @@ func main() {
 	}
 
 	// Minimize sphere function
-	x0 = []float64{10.0, 10.0, 10.0, 10.0, 10.0}
-	minimum, exitStatus = optimizer.Minimize(sphereObjective, x0, nil)
-	fmt.Printf("----- Sphere Function -----\nexpected: %v\n minimum: %v\n  status: %v\n\n",
+	fmt.Printf("----- Sphere Function -----\n")
+	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
+	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
+	fmt.Printf("expected: %v\n minimum: %v\n  status: %v\n\n",
 		sphereMin, minimum, exitStatus)
+
+	// Create a new solver for a new problem with a different
+	// dimensionality
+	optimizer = lbfgsb.NewLbfgsb(2)
+
+	// Create Rosenbrock objective function by composing individual
+	// value and gradient functions
+	rosenObjective := lbfgsb.GeneralObjectiveFunction{
+		Function: RosenbrockFunction,
+		Gradient: RosenbrockGradient,
+	}
+	rosenMin := lbfgsb.PointValueGradient{
+		X: []float64{1.0, 1.0},
+		F: 0.0,
+		G: []float64{0.0, 0.0},
+	}
+
+	// Minimize Rosenbrock without additional parameters
+	fmt.Printf("----- Rosenbrock Function -----\n")
+	x0 = []float64{10.0, 10.0}
+	minimum, exitStatus = optimizer.Minimize(rosenObjective, x0, nil)
+	fmt.Printf("expected: %v\n minimum: %v\n  status: %v\n\n",
+		rosenMin, minimum, exitStatus)
 
 	// TODO example with bounds
 }
 
-// Famous Rosenbrock function as a FunctionWithGradient object
-type RosenbrockFunction struct {}
+// Sphere (multi-dimensional parabola) function as a FunctionWithGradient object
+type SphereFunction struct {}
+
+// Sphere function
+func (sf SphereFunction) Evaluate(point []float64) (value float64) {
+	for _, x := range point {
+		value += x * x
+	}
+	return
+}
+
+// Sphere function gradient
+func (sf SphereFunction) EvaluateGradient(point []float64) (gradient []float64) {
+	gradient = make([]float64, len(point))
+	for i, x := range point {
+		gradient[i] = 2.0 * x
+	}
+	return
+}
 
 // Rosenbrock function value
-func (rf RosenbrockFunction) Evaluate(point []float64) (value float64) {
+func RosenbrockFunction(point []float64) (value float64) {
 	for i := 0; i < len(point) - 1; i++ {
 		value += Pow2(1.0 - point[i]) +
 			100.0 * Pow2(point[i + 1] - Pow2(point[i]))
@@ -84,7 +109,7 @@ func (rf RosenbrockFunction) Evaluate(point []float64) (value float64) {
 }
 
 // Rosenbrock function gradient
-func (rf RosenbrockFunction) EvaluateGradient(point []float64) (gradient []float64) {
+func RosenbrockGradient(point []float64) (gradient []float64) {
 	gradient = make([]float64, len(point))
 	gradient[0] = -400.0 * point[0] * (point[1] - Pow2(point[0])) -
 		2.0 * (1.0 - point[0])
@@ -100,21 +125,4 @@ func (rf RosenbrockFunction) EvaluateGradient(point []float64) (gradient []float
 // Simple square function rather than calling math.Pow
 func Pow2(x float64) float64 {
 	return x * x
-}
-
-// Sphere function
-func SphereFunction(point []float64) (value float64) {
-	for _, x := range point {
-		value += x * x
-	}
-	return
-}
-
-// Sphere function gradient
-func SphereGradient(point []float64) (gradient []float64) {
-	gradient = make([]float64, len(point))
-	for i, x := range point {
-		gradient[i] = 2.0 * x
-	}
-	return
 }

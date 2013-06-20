@@ -11,3 +11,4 @@ build
 
 # Programs, libraries
 liblbfgsb.a
+example/example
