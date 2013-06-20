@@ -25,7 +25,7 @@ import (
 // Private constants
 const (
 	// 3 or so 80-character lines
-	buffer_size = 250
+	bufferSize = 250
 )
 
 // Lbfgsb provides the functionality of the Fortran L-BFGS-B optimizer
@@ -33,13 +33,13 @@ const (
 type Lbfgsb struct {
 	// Problem specification.  Bounds may be nil or allocated fully.
 	// Individual bounds may be omitted by placing NaNs or Infs.
-	lower_bounds []float64
-	upper_bounds []float64
+	lowerBounds []float64
+	upperBounds []float64
 	// Parameters
-	approximation_size int
-	f_tolerance        float64
-	g_tolerance        float64
-	debug              int
+	approximationSize int
+	fTolerance        float64
+	gTolerance        float64
+	debug             int
 }
 
 // Minimize optimizes the given objective using the L-BFGS-B algorithm.
@@ -56,13 +56,13 @@ func (lbfgsb Lbfgsb) Minimize(
 	// Check everyone agrees on the dimensionality
 	dim := len(initialPoint)
 	dim_c := C.int(dim)
-	if lbfgsb.lower_bounds != nil && len(lbfgsb.lower_bounds) != dim {
+	if lbfgsb.lowerBounds != nil && len(lbfgsb.lowerBounds) != dim {
 		exitStatus.Code = USAGE_ERROR
-		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initial_point: %v, lower_bounds: %v", dim, len(lbfgsb.lower_bounds))
+		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initialPoint: %v, lowerBounds: %v", dim, len(lbfgsb.lowerBounds))
 	}
-	if lbfgsb.upper_bounds != nil && len(lbfgsb.upper_bounds) != dim {
+	if lbfgsb.upperBounds != nil && len(lbfgsb.upperBounds) != dim {
 		exitStatus.Code = USAGE_ERROR
-		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initial_point: %v, upper_bounds: %v", dim, len(lbfgsb.upper_bounds))
+		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initialPoint: %v, upperBounds: %v", dim, len(lbfgsb.upperBounds))
 	}
 
 	// Process the parameters.  Argument 'parameters' overrides but does
@@ -71,32 +71,32 @@ func (lbfgsb Lbfgsb) Minimize(
 	var paramVal interface{}
 	var ok bool
 	// Approximation size
-	approximation_size := lbfgsb.approximation_size
-	if paramVal, ok = parameters["approximation_size"]; ok {
-		approximation_size, ok = paramVal.(int)
-		if !ok || approximation_size <= 0 {
+	approximationSize := lbfgsb.approximationSize
+	if paramVal, ok = parameters["approximationSize"]; ok {
+		approximationSize, ok = paramVal.(int)
+		if !ok || approximationSize <= 0 {
 			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: approximation_size: %v.  Expected integer >= 1.", paramVal)
+			exitStatus.Message = fmt.Sprintf("Bad parameter value: approximationSize: %v.  Expected integer >= 1.", paramVal)
 			return
 		}
 	}
 	// F tolerance
-	f_tolerance := lbfgsb.f_tolerance
-	if paramVal, ok = parameters["f_tol"]; ok {
-		f_tolerance, ok = paramVal.(float64)
-		if !ok || f_tolerance <= 0.0 {
+	fTolerance := lbfgsb.fTolerance
+	if paramVal, ok = parameters["fTolerance"]; ok {
+		fTolerance, ok = paramVal.(float64)
+		if !ok || fTolerance <= 0.0 {
 			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: f_tol: %v.  Expected float >= 0.", paramVal)
+			exitStatus.Message = fmt.Sprintf("Bad parameter value: fTolerance: %v.  Expected float >= 0.", paramVal)
 			return
 		}
 	}
 	// G tolerance
-	g_tolerance := lbfgsb.g_tolerance
-	if paramVal, ok = parameters["g_tol"]; ok {
-		g_tolerance, ok = paramVal.(float64)
-		if !ok || g_tolerance <= 0.0 {
+	gTolerance := lbfgsb.gTolerance
+	if paramVal, ok = parameters["gTolerance"]; ok {
+		gTolerance, ok = paramVal.(float64)
+		if !ok || gTolerance <= 0.0 {
 			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: g_tol: %v.  Expected float >= 0.", paramVal)
+			exitStatus.Message = fmt.Sprintf("Bad parameter value: gTolerance: %v.  Expected float >= 0.", paramVal)
 			return
 		}
 	}
@@ -112,35 +112,35 @@ func (lbfgsb Lbfgsb) Minimize(
 	}
 
 	// Set up bounds control.  Use a C-compatible type.
-	bounds_control := make([]int32, dim)
-	if lbfgsb.lower_bounds != nil {
-		for index, bound := range lbfgsb.lower_bounds {
+	boundsControl := make([]int32, dim)
+	if lbfgsb.lowerBounds != nil {
+		for index, bound := range lbfgsb.lowerBounds {
 			if !math.IsNaN(bound) && !math.IsInf(bound, -1) {
-				bounds_control[index] = 1
+				boundsControl[index] = 1
 			}
 		}
 	}
-	if lbfgsb.upper_bounds != nil {
-		for index, bound := range lbfgsb.upper_bounds {
+	if lbfgsb.upperBounds != nil {
+		for index, bound := range lbfgsb.upperBounds {
 			if !math.IsNaN(bound) && !math.IsInf(bound, -1) {
 				// Map 0 -> 3, 1 -> 2
-				bounds_control[index] = 3 - bounds_control[index]
+				boundsControl[index] = 3 - boundsControl[index]
 			}
 		}
 	}
 
 	// Set up callback
 	callbackData := &callbackData{objective: objective}
-	callback_data_c := unsafe.Pointer(callbackData)
+	callbackData_c := unsafe.Pointer(callbackData)
 
 	// Allocate arrays for return value
 	minimum.X = make([]float64, dim)
 	minimum.G = make([]float64, dim)
 
 	// Convert parameters for C
-	approximation_size_c := C.int(approximation_size)
-	f_tolerance_c := C.double(f_tolerance)
-	g_tolerance_c := C.double(g_tolerance)
+	approximationSize_c := C.int(approximationSize)
+	fTolerance_c := C.double(fTolerance)
+	gTolerance_c := C.double(gTolerance)
 	debug_c := C.int(debug)
 
 	// Prepare buffers and arrays for C.  Avoid allocation in C land by
@@ -149,31 +149,31 @@ func (lbfgsb Lbfgsb) Minimize(
 	// is how they did it on the Cgo page: http://golang.org/cmd/cgo/.
 	// (One could always allocate slices of C types, pass those, and
 	// then copy out and convert the contents on return.)
-	var bounds_control_c *C.int = (*C.int)(&bounds_control[0])
-	var lower_bounds_c *C.double = (*C.double)(&lbfgsb.lower_bounds[0])
-	var upper_bounds_c *C.double = (*C.double)(&lbfgsb.upper_bounds[0])
+	var boundsControl_c *C.int = (*C.int)(&boundsControl[0])
+	var lowerBounds_c *C.double = (*C.double)(&lbfgsb.lowerBounds[0])
+	var upperBounds_c *C.double = (*C.double)(&lbfgsb.upperBounds[0])
 	var x0_c *C.double = (*C.double)(&initialPoint[0])
-	var min_x_c *C.double = (*C.double)(&minimum.X[0])
-	var min_f_c *C.double = (*C.double)(&minimum.F)
-	var min_g_c *C.double = (*C.double)(&minimum.G[0])
+	var minX_c *C.double = (*C.double)(&minimum.X[0])
+	var minF_c *C.double = (*C.double)(&minimum.F)
+	var minG_c *C.double = (*C.double)(&minimum.G[0])
 	// Status message
-	status_message_length_c := C.int(buffer_size)
-	var status_message_buffer [buffer_size]C.char
-	status_message_c := (*C.char)(&status_message_buffer[0])
+	statusMessageLength_c := C.int(bufferSize)
+	var statusMessageBuffer [bufferSize]C.char
+	statusMessage_c := (*C.char)(&statusMessageBuffer[0])
 
 	// Call the actual L-BFGS-B procedure
-	status_code_c := C.lbfgsb_minimize_c(
-		callback_data_c, dim_c,
-		bounds_control_c, lower_bounds_c, upper_bounds_c,
-		approximation_size_c, f_tolerance_c, g_tolerance_c,
-		x0_c, min_x_c, min_f_c, min_g_c,
-		status_message_length_c, status_message_c, debug_c,
+	statusCode_c := C.lbfgsb_minimize_c(
+		callbackData_c, dim_c,
+		boundsControl_c, lowerBounds_c, upperBounds_c,
+		approximationSize_c, fTolerance_c, gTolerance_c,
+		x0_c, minX_c, minF_c, minG_c,
+		statusMessageLength_c, statusMessage_c, debug_c,
 	)
 
 	// Convert outputs
 	// Exit status codes match between ExitStatusCode and the C enum
-	exitStatus.Code = ExitStatusCode(status_code_c)
-	exitStatus.Message = C.GoStringN(status_message_c, status_message_length_c)
+	exitStatus.Code = ExitStatusCode(statusCode_c)
+	exitStatus.Message = C.GoStringN(statusMessage_c, statusMessageLength_c)
 	// Minimum already populated because pointers to its members were
 	// passed into C/Fortran
 
@@ -194,19 +194,19 @@ type callbackData struct {
 //export go_objective_function_callback
 func go_objective_function_callback(
 	dim_c C.int, point_c, value_c *C.double,
-	callback_data_c unsafe.Pointer,
-	status_message_length C.int, status_message *C.char) (
-		status_code_c C.int) {
+	callbackData_c unsafe.Pointer,
+	statusMessageLength_c C.int, statusMessage_c *C.char) (
+		statusCode_c C.int) {
 
 	var point []float64
 
 	// Convert inputs
 	dim := int(dim_c)
 	wrapCArrayAsGoSlice_Float64(point_c, dim, &point)
-	cbdata := (*callbackData)(callback_data_c)
+	cbData := (*callbackData)(callbackData_c)
 
 	// Evaluate the objective function
-	value := cbdata.objective.Evaluate(point)
+	value := cbData.objective.Evaluate(point)
 
 	// Convert outputs
 	*value_c = C.double(value)
@@ -222,23 +222,23 @@ func go_objective_function_callback(
 //export go_objective_gradient_callback
 func go_objective_gradient_callback(
 	dim_c C.int, point_c, gradient_c *C.double,
-	callback_data_c unsafe.Pointer,
-	status_message_length C.int, status_message *C.char) (
-		status_code_c C.int) {
+	callbackData_c unsafe.Pointer,
+	statusMessageLength_c C.int, statusMessage_c *C.char) (
+		statusCode_c C.int) {
 
-	var point, gradient, grad_ret []float64
+	var point, gradient, gradRet []float64
 
 	// Convert inputs
 	dim := int(dim_c)
 	wrapCArrayAsGoSlice_Float64(point_c, dim, &point)
-	cbdata := (*callbackData)(callback_data_c)
+	cbData := (*callbackData)(callbackData_c)
 
 	// Evaluate the gradient of the objective function
-	grad_ret = cbdata.objective.EvaluateGradient(point)
+	gradRet = cbData.objective.EvaluateGradient(point)
 
 	// Convert outputs
 	wrapCArrayAsGoSlice_Float64(gradient_c, dim, &gradient)
-	copy(gradient, grad_ret)
+	copy(gradient, gradRet)
 
 	return
 }
