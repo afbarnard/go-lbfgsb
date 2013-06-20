@@ -28,18 +28,205 @@ const (
 	bufferSize = 250
 )
 
+// NewLbfgsb creates, initializes, and returns a new Lbfgsb solver
+// object.  Equivalent to 'new(Lbfgsb).Init(dimensionality)'.  A
+// zero-value Lbfgsb object is valid and needs no explicit construction.
+// However, this constructor is convenient and explicit.
+func NewLbfgsb(dimensionality int) *Lbfgsb {
+	return new(Lbfgsb).Init(dimensionality)
+}
+
 // Lbfgsb provides the functionality of the Fortran L-BFGS-B optimizer
-// as a Go object.
+// as a Go object.  A Lbfgsb solver object contains the setup for an
+// optimization problem of a particular dimensionality.  It stores
+// bounds, parameters, and results so it is relatively lightweight
+// (especially if no bounds are specified).  It can be re-used for other
+// problems with the same dimensionality, but using a different solver
+// object for each problem is probably better organization.  A
+// zero-value Lbfgsb object is valid and needs no explicit construction.
+// A solver object will perform unconstrained optimization unless bounds
+// are set.
 type Lbfgsb struct {
+	// Dimensionality of the problem.  Zero is an invalid
+	// dimensionality, so this also serves as an indicator of whether
+	// this object has been initialized for computation.  Once the
+	// dimensionality has been set it cannot be changed.  To be ready
+	// for computation the following must be greater than zero:
+	// dimensionality, approximationSize, fTolerance, gTolerance.
+	dimensionality int
+
 	// Problem specification.  Bounds may be nil or allocated fully.
 	// Individual bounds may be omitted by placing NaNs or Infs.
 	lowerBounds []float64
 	upperBounds []float64
+
 	// Parameters
 	approximationSize int
 	fTolerance        float64
 	gTolerance        float64
-	debug             int
+	debugLevel        int
+}
+
+// Init initializes this Lbfgsb solver for problems of the given
+// dimensionality.  Also sets default parameters that are not zero
+// values.  Returns this for method chaining.  Ignores calls subsequent
+// to the first (because a solver is intended for only a particular
+// dimensionality).
+func (lbfgsb Lbfgsb) Init(dimensionality int) *Lbfgsb {
+	// Only initialize if not previously initialized
+	if lbfgsb.dimensionality == 0 {
+		// Check for a valid dimensionality
+		if dimensionality <= 0 {
+			panic(fmt.Errorf("Lbfgsb: Optimization problem dimensionality %d <= 0.  Expected > 0.", dimensionality))
+		}
+		// Set up the solver.  Protect previous values so Init can be
+		// called after other methods.
+		lbfgsb.dimensionality = dimensionality
+		if lbfgsb.approximationSize == 0 {
+			lbfgsb.approximationSize = 5
+		}
+		if lbfgsb.fTolerance == 0.0 {
+			lbfgsb.fTolerance = 1e-6
+		}
+		if lbfgsb.gTolerance == 0.0 {
+			lbfgsb.gTolerance = 1e-6
+		}
+	}
+	return &lbfgsb
+}
+
+// SetBounds sets the upper and lower bounds on the individual
+// dimensions to the given intervals resulting in a constrained
+// optimization problem.  Individual bounds may be (+/-)Inf.
+func (lbfgsb Lbfgsb) SetBounds(bounds [][2]float64) *Lbfgsb {
+	// Ensure object is initialized
+	lbfgsb.Init(len(bounds))
+	// Check dimensionality
+	if lbfgsb.dimensionality != len(bounds) {
+		panic(fmt.Errorf("Lbfgsb: Dimensionality of the bounds (%d) does not match the dimensionality of the solver (%d).", len(bounds), lbfgsb.dimensionality))
+	}
+
+	lbfgsb.lowerBounds = make([]float64, lbfgsb.dimensionality)
+	lbfgsb.upperBounds = make([]float64, lbfgsb.dimensionality)
+	for i, interval := range bounds {
+		lbfgsb.lowerBounds[i] = interval[0]
+		lbfgsb.upperBounds[i] = interval[1]
+	}
+	return &lbfgsb
+}
+
+// SetBoundsAll sets the bounds of all the dimensions to [lower,upper].
+// Init must be called first to set the dimensionality.
+func (lbfgsb Lbfgsb) SetBoundsAll(lower, upper float64) *Lbfgsb {
+	// Check object has been initialized
+	if lbfgsb.dimensionality == 0 {
+		panic(fmt.Errorf("Lbfgsb: Init() must be called before SetAllBounds()."))
+	}
+
+	lbfgsb.lowerBounds = make([]float64, lbfgsb.dimensionality)
+	lbfgsb.upperBounds = make([]float64, lbfgsb.dimensionality)
+	for i := 0; i < lbfgsb.dimensionality; i++ {
+		lbfgsb.lowerBounds[i] = lower
+		lbfgsb.upperBounds[i] = upper
+	}
+	return &lbfgsb
+}
+
+// SetBoundsSparse sets the bounds to only those in the given map;
+// others are unbounded.  Each entry in the map is a (zero-based)
+// dimension index mapped to a slice representing an interval.
+// Individual bounds may be (+/-)Inf.  Init must be called first to set
+// the dimensionality.
+//
+// The slice is interpreted as an interval as follows:
+//
+//     nil | []: [-Inf, +Inf]
+//     [x]: [-|x|, |x|]
+//     [l, u, ...]: [l, u]
+func (lbfgsb Lbfgsb) SetBoundsSparse(sparseBounds map[int][]float64) *Lbfgsb {
+	// Check object has been initialized
+	if lbfgsb.dimensionality == 0 {
+		panic(fmt.Errorf("Lbfgsb: Init() must be called before SetAllBounds()."))
+	}
+
+	// If no bounds are given, clear the bounds
+	if sparseBounds == nil || len(sparseBounds) == 0 {
+		return lbfgsb.ClearBounds()
+	}
+
+	lbfgsb.lowerBounds = make([]float64, lbfgsb.dimensionality)
+	lbfgsb.upperBounds = make([]float64, lbfgsb.dimensionality)
+	nInf := math.Inf(-1)
+	pInf := math.Inf(+1)
+	for i := 0; i < lbfgsb.dimensionality; i++ {
+		interval, exists := sparseBounds[i]
+		if exists {
+			if interval == nil || len(interval) == 0 {
+				lbfgsb.lowerBounds[i] = nInf
+				lbfgsb.upperBounds[i] = pInf
+			} else if len(interval) == 1 {
+				lbfgsb.upperBounds[i] = math.Abs(interval[0])
+				lbfgsb.lowerBounds[i] = -lbfgsb.upperBounds[i]
+			} else {
+				lbfgsb.lowerBounds[i] = interval[0]
+				lbfgsb.upperBounds[i] = interval[1]
+			}
+		} else {
+			lbfgsb.lowerBounds[i] = nInf
+			lbfgsb.upperBounds[i] = pInf
+		}
+	}
+	return &lbfgsb
+}
+
+// ClearBounds clears all bounds resulting in an unconstrained
+// optimization problem.
+func (lbfgsb Lbfgsb) ClearBounds() *Lbfgsb {
+	lbfgsb.lowerBounds = nil
+	lbfgsb.upperBounds = nil
+	return &lbfgsb
+}
+
+// SetApproximationSize sets the amount of history (points and
+// gradients) stored and used to approximate the inverse Hessian matrix.
+// More history allows better approximation at the cost of more memory.
+// The recommended range is [3,20].  Defaults to 5.
+func (lbfgsb Lbfgsb) SetApproximationSize(size int) *Lbfgsb {
+	if size <= 0 {
+		panic(fmt.Errorf("Lbfgsb: Approximation size %d <= 0.  Expected > 0.", size))
+	}
+	lbfgsb.approximationSize = size
+	return &lbfgsb
+}
+
+// SetFTolerance sets the tolerance of the precision of the objective
+// function required for convergence.  Defaults to 1e-6.
+func (lbfgsb Lbfgsb) SetFTolerance(fTolerance float64) *Lbfgsb {
+	if fTolerance <= 0.0 {
+		panic(fmt.Errorf("Lbfgsb: F tolerance %g <= 0.  Expected > 0.", fTolerance))
+	}
+	lbfgsb.fTolerance = fTolerance
+	return &lbfgsb
+}
+
+// SetGTolerance sets the tolerance of the precision of the objective
+// gradient required for convergence.  Defaults to 1e-6.
+func (lbfgsb Lbfgsb) SetGTolerance(gTolerance float64) *Lbfgsb {
+	if gTolerance <= 0.0 {
+		panic(fmt.Errorf("Lbfgsb: G tolerance %g <= 0.  Expected > 0.", gTolerance))
+	}
+	lbfgsb.gTolerance = gTolerance
+	return &lbfgsb
+}
+
+// SetDebugLevel sets the level of output verbosity.  Defaults to 0, no
+// output.
+func (lbfgsb Lbfgsb) SetDebugLevel(level int) *Lbfgsb {
+	if level < 0 {
+		panic(fmt.Errorf("Lbfgsb: Debug level %d < 0.  Expected >= 0.", level))
+	}
+	lbfgsb.debugLevel = level
+	return &lbfgsb
 }
 
 // Minimize optimizes the given objective using the L-BFGS-B algorithm.
@@ -51,18 +238,17 @@ func (lbfgsb Lbfgsb) Minimize(
 		minimum PointValueGradient,
 		exitStatus ExitStatus) {
 
+	// Make sure object has been initialized
+	lbfgsb.Init(len(initialPoint))
+
 	// TODO OMG! split this out into some helper functions
 
-	// Check everyone agrees on the dimensionality
+	// Check dimensionality
 	dim := len(initialPoint)
 	dim_c := C.int(dim)
-	if lbfgsb.lowerBounds != nil && len(lbfgsb.lowerBounds) != dim {
+	if lbfgsb.dimensionality != dim {
 		exitStatus.Code = USAGE_ERROR
-		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initialPoint: %v, lowerBounds: %v", dim, len(lbfgsb.lowerBounds))
-	}
-	if lbfgsb.upperBounds != nil && len(lbfgsb.upperBounds) != dim {
-		exitStatus.Code = USAGE_ERROR
-		exitStatus.Message = fmt.Sprintf("Dimensionality disagreement: initialPoint: %v, upperBounds: %v", dim, len(lbfgsb.upperBounds))
+		exitStatus.Message = fmt.Sprintf("Lbfgsb: Dimensionality of the initial point (%d) does not match the dimensionality of the solver (%d).", dim, lbfgsb.dimensionality)
 	}
 
 	// Process the parameters.  Argument 'parameters' overrides but does
@@ -100,13 +286,13 @@ func (lbfgsb Lbfgsb) Minimize(
 			return
 		}
 	}
-	// Debug
-	debug := lbfgsb.debug
-	if paramVal, ok = parameters["debug"]; ok {
-		debug, ok = paramVal.(int)
-		if !ok || debug < 0 {
+	// Debug level
+	debugLevel := lbfgsb.debugLevel
+	if paramVal, ok = parameters["debugLevel"]; ok {
+		debugLevel, ok = paramVal.(int)
+		if !ok || debugLevel < 0 {
 			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: debug: %v.  Expected integer >= 0.", paramVal)
+			exitStatus.Message = fmt.Sprintf("Bad parameter value: debugLevel: %v.  Expected integer >= 0.", paramVal)
 			return
 		}
 	}
@@ -141,7 +327,7 @@ func (lbfgsb Lbfgsb) Minimize(
 	approximationSize_c := C.int(approximationSize)
 	fTolerance_c := C.double(fTolerance)
 	gTolerance_c := C.double(gTolerance)
-	debug_c := C.int(debug)
+	debugLevel_c := C.int(debugLevel)
 
 	// Prepare buffers and arrays for C.  Avoid allocation in C land by
 	// allocating compatible things in Go and passing their addresses.
@@ -167,7 +353,7 @@ func (lbfgsb Lbfgsb) Minimize(
 		boundsControl_c, lowerBounds_c, upperBounds_c,
 		approximationSize_c, fTolerance_c, gTolerance_c,
 		x0_c, minX_c, minF_c, minG_c,
-		statusMessageLength_c, statusMessage_c, debug_c,
+		statusMessageLength_c, statusMessage_c, debugLevel_c,
 	)
 
 	// Convert outputs
