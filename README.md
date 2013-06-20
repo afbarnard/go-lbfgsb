@@ -16,10 +16,11 @@ more information about [L-BFGS-B on
 Wikipedia](http://en.wikipedia.org/wiki/L-BFGS) or in your favorite
 optimization textbook.
 
-This Go package provides a modern, intuitive interface to the [L-BFGS-B
+This software provides modern, intuitive interfaces to the [L-BFGS-B
 Fortran
 software](http://users.eecs.northwestern.edu/~nocedal/software.html) by
-the authors of the algorithm, Jorge Nocedal et al.
+the authors of the algorithm, Jorge Nocedal et al.  Interfaces are
+provided for Go (Golang), C, and Fortran 2003.
 
 
 License
@@ -47,11 +48,11 @@ This software is in the early development stages, but should have a
 useful, stable, released package pretty quickly.
 
 * Simple API allowing Go programs to easily do efficient, accurate
-  optimization.  You only need to provide functions (or an object) to
-  evaluate the objective value and gradient.
+  optimization.  You only need to provide functions (or an object) that
+  evaluate the objective function value and gradient.
 
-* Bounds constraints allow typical, simple inequality constraints on
-  individual variables without needing a more specialized algorithm.
+* Bounds constraints allow typical, simple inequality (box) constraints
+  on individual variables without needing a more specialized algorithm.
 
 * Modern (Fortran 2003) API for original FORTRAN 77 optimizer.
 
@@ -120,6 +121,9 @@ Contact
 -------
 
 * [Aubrey Barnard](https://github.com/afbarnard)
+
+Contributions of all sorts, patches, bugs, issues, etc. are welcome, but
+are most welcome after due diligence.
 
 
 Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
