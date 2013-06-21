@@ -394,26 +394,32 @@ contains
     character(len=*), intent(in) :: task
     character(len=state_size), intent(out) :: state
     character(len=*), intent(out) :: message
+    integer :: cut_index
 
-    ! Fill the state and message with spaces
-    state = ' '
+    ! Clear the message to ensure sensible return value
     message = ' '
 
+    ! Extract the first word of the task which is delimited by a colon
+    ! (if any) or is the whole word.  (Intrinsic index() returns 0 if
+    ! substring not found.)
+    cut_index = index(task, ':') - 1
+    if (cut_index == -1) cut_index = len_trim(task)
+
     ! Discriminate the tasks based on the initial characters
-    select case (task(1:5))
+    select case (task(1:cut_index))
     case ('START')
        state = 'START'
-    case ('FG', 'FG_LN', 'FG_ST')
+    case ('FG', 'FG_LNSRCH', 'FG_START')
        state = 'EVAL_FG'
     case ('NEW_X')
        state = 'NEW_X'
-    case ('CONVE')
+    case ('CONVERGENCE')
        state = 'CONVERGENCE'
        message = task(14:)
-    case ('ABNOR')
+    case ('ABNORMAL_TERMINATION_IN_LNSRCH')
        state = 'ABNORMAL'
        message = task
-    case ('WARNI')
+    case ('WARNING')
        ! All the warnings appear to relate only to the line search code
        ! and so may not get back to here
        state = 'WARNING'
@@ -426,7 +432,7 @@ contains
     case default
        ! Unrecognized task
        state = 'ERROR_INTERNAL'
-       message = 'Error: Unrecognized task: '//task
+       message = 'Unrecognized task: '//task
     end select
 
     ! Assigned task values
