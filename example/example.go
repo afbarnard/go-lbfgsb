@@ -50,8 +50,7 @@ func main() {
 	fmt.Printf("----- Sphere Function -----\n")
 	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
 	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
-	fmt.Printf("expected: %v\n minimum: %v\n  status: %v\n\n",
-		sphereMin, minimum, exitStatus)
+	PrintResults(sphereMin, minimum, exitStatus)
 
 	// TODO report optimization statistics
 
@@ -76,8 +75,7 @@ func main() {
 	fmt.Printf("----- Rosenbrock Function -----\n")
 	x0 = []float64{10.0, 10.0}
 	minimum, exitStatus = optimizer.Minimize(rosenObjective, x0, nil)
-	fmt.Printf("expected: %v\n minimum: %v\n  status: %v\n\n",
-		rosenMin, minimum, exitStatus)
+	PrintResults(rosenMin, minimum, exitStatus)
 
 	// TODO example with bounds
 
@@ -132,4 +130,15 @@ func RosenbrockGradient(point []float64) (gradient []float64) {
 // Simple square function rather than calling math.Pow
 func Pow2(x float64) float64 {
 	return x * x
+}
+
+// Displays expected and actual results of optimization
+func PrintResults(expectedMin, actualMin lbfgsb.PointValueGradient,
+	exitStatus lbfgsb.ExitStatus) {
+
+	fmt.Printf("expected: X: %v\n          F: %v\n          G: %v\n",
+		expectedMin.X, expectedMin.F, expectedMin.G)
+	fmt.Printf(" minimum: X: %v\n          F: %v\n          G: %v\n",
+		actualMin.X, actualMin.F, actualMin.G)
+	fmt.Printf("  status: %v\n\n", exitStatus)
 }
