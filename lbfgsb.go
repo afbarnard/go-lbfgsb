@@ -72,7 +72,7 @@ type Lbfgsb struct {
 // values.  Returns this for method chaining.  Ignores calls subsequent
 // to the first (because a solver is intended for only a particular
 // dimensionality).
-func (lbfgsb Lbfgsb) Init(dimensionality int) *Lbfgsb {
+func (lbfgsb *Lbfgsb) Init(dimensionality int) *Lbfgsb {
 	// Only initialize if not previously initialized
 	if lbfgsb.dimensionality == 0 {
 		// Check for a valid dimensionality
@@ -92,13 +92,13 @@ func (lbfgsb Lbfgsb) Init(dimensionality int) *Lbfgsb {
 			lbfgsb.gTolerance = 1e-6
 		}
 	}
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetBounds sets the upper and lower bounds on the individual
 // dimensions to the given intervals resulting in a constrained
 // optimization problem.  Individual bounds may be (+/-)Inf.
-func (lbfgsb Lbfgsb) SetBounds(bounds [][2]float64) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetBounds(bounds [][2]float64) *Lbfgsb {
 	// Ensure object is initialized
 	lbfgsb.Init(len(bounds))
 	// Check dimensionality
@@ -112,12 +112,12 @@ func (lbfgsb Lbfgsb) SetBounds(bounds [][2]float64) *Lbfgsb {
 		lbfgsb.lowerBounds[i] = interval[0]
 		lbfgsb.upperBounds[i] = interval[1]
 	}
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetBoundsAll sets the bounds of all the dimensions to [lower,upper].
 // Init must be called first to set the dimensionality.
-func (lbfgsb Lbfgsb) SetBoundsAll(lower, upper float64) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetBoundsAll(lower, upper float64) *Lbfgsb {
 	// Check object has been initialized
 	if lbfgsb.dimensionality == 0 {
 		panic(fmt.Errorf("Lbfgsb: Init() must be called before SetAllBounds()."))
@@ -129,7 +129,7 @@ func (lbfgsb Lbfgsb) SetBoundsAll(lower, upper float64) *Lbfgsb {
 		lbfgsb.lowerBounds[i] = lower
 		lbfgsb.upperBounds[i] = upper
 	}
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetBoundsSparse sets the bounds to only those in the given map;
@@ -143,7 +143,7 @@ func (lbfgsb Lbfgsb) SetBoundsAll(lower, upper float64) *Lbfgsb {
 //     nil | []: [-Inf, +Inf]
 //     [x]: [-|x|, |x|]
 //     [l, u, ...]: [l, u]
-func (lbfgsb Lbfgsb) SetBoundsSparse(sparseBounds map[int][]float64) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetBoundsSparse(sparseBounds map[int][]float64) *Lbfgsb {
 	// Check object has been initialized
 	if lbfgsb.dimensionality == 0 {
 		panic(fmt.Errorf("Lbfgsb: Init() must be called before SetAllBounds()."))
@@ -176,62 +176,62 @@ func (lbfgsb Lbfgsb) SetBoundsSparse(sparseBounds map[int][]float64) *Lbfgsb {
 			lbfgsb.upperBounds[i] = pInf
 		}
 	}
-	return &lbfgsb
+	return lbfgsb
 }
 
 // ClearBounds clears all bounds resulting in an unconstrained
 // optimization problem.
-func (lbfgsb Lbfgsb) ClearBounds() *Lbfgsb {
+func (lbfgsb *Lbfgsb) ClearBounds() *Lbfgsb {
 	lbfgsb.lowerBounds = nil
 	lbfgsb.upperBounds = nil
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetApproximationSize sets the amount of history (points and
 // gradients) stored and used to approximate the inverse Hessian matrix.
 // More history allows better approximation at the cost of more memory.
 // The recommended range is [3,20].  Defaults to 5.
-func (lbfgsb Lbfgsb) SetApproximationSize(size int) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetApproximationSize(size int) *Lbfgsb {
 	if size <= 0 {
 		panic(fmt.Errorf("Lbfgsb: Approximation size %d <= 0.  Expected > 0.", size))
 	}
 	lbfgsb.approximationSize = size
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetFTolerance sets the tolerance of the precision of the objective
 // function required for convergence.  Defaults to 1e-6.
-func (lbfgsb Lbfgsb) SetFTolerance(fTolerance float64) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetFTolerance(fTolerance float64) *Lbfgsb {
 	if fTolerance <= 0.0 {
 		panic(fmt.Errorf("Lbfgsb: F tolerance %g <= 0.  Expected > 0.", fTolerance))
 	}
 	lbfgsb.fTolerance = fTolerance
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetGTolerance sets the tolerance of the precision of the objective
 // gradient required for convergence.  Defaults to 1e-6.
-func (lbfgsb Lbfgsb) SetGTolerance(gTolerance float64) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetGTolerance(gTolerance float64) *Lbfgsb {
 	if gTolerance <= 0.0 {
 		panic(fmt.Errorf("Lbfgsb: G tolerance %g <= 0.  Expected > 0.", gTolerance))
 	}
 	lbfgsb.gTolerance = gTolerance
-	return &lbfgsb
+	return lbfgsb
 }
 
 // SetDebugLevel sets the level of output verbosity.  Defaults to 0, no
 // output.
-func (lbfgsb Lbfgsb) SetDebugLevel(level int) *Lbfgsb {
+func (lbfgsb *Lbfgsb) SetDebugLevel(level int) *Lbfgsb {
 	if level < 0 {
 		panic(fmt.Errorf("Lbfgsb: Debug level %d < 0.  Expected >= 0.", level))
 	}
 	lbfgsb.debugLevel = level
-	return &lbfgsb
+	return lbfgsb
 }
 
 // Minimize optimizes the given objective using the L-BFGS-B algorithm.
 // Implements OptimizationFunctionMinimizer.Minimize.
-func (lbfgsb Lbfgsb) Minimize(
+func (lbfgsb *Lbfgsb) Minimize(
 	objective FunctionWithGradient,
 	initialPoint []float64,
 	parameters map[string]interface{}) (
