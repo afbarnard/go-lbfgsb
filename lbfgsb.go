@@ -249,6 +249,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 	if lbfgsb.dimensionality != dim {
 		exitStatus.Code = USAGE_ERROR
 		exitStatus.Message = fmt.Sprintf("Lbfgsb: Dimensionality of the initial point (%d) does not match the dimensionality of the solver (%d).", dim, lbfgsb.dimensionality)
+		return
 	}
 
 	// Process the parameters.  Argument 'parameters' overrides but does
@@ -298,11 +299,11 @@ func (lbfgsb *Lbfgsb) Minimize(
 	}
 
 	// Set up bounds control.  Use a C-compatible type.
-	boundsControl := make([]int32, dim)
+	boundsControl := make([]C.int, dim)
 	if lbfgsb.lowerBounds != nil {
 		for index, bound := range lbfgsb.lowerBounds {
 			if !math.IsNaN(bound) && !math.IsInf(bound, -1) {
-				boundsControl[index] = 1
+				boundsControl[index] = C.int(1)
 			}
 		}
 	}
@@ -310,9 +311,15 @@ func (lbfgsb *Lbfgsb) Minimize(
 		for index, bound := range lbfgsb.upperBounds {
 			if !math.IsNaN(bound) && !math.IsInf(bound, -1) {
 				// Map 0 -> 3, 1 -> 2
-				boundsControl[index] = 3 - boundsControl[index]
+				boundsControl[index] = C.int(3 - boundsControl[index])
 			}
 		}
+	}
+	if lbfgsb.lowerBounds == nil {
+		lbfgsb.lowerBounds = make([]float64, dim)
+	}
+	if lbfgsb.upperBounds == nil {
+		lbfgsb.upperBounds = make([]float64, dim)
 	}
 
 	// Set up callback
@@ -335,7 +342,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 	// is how they did it on the Cgo page: http://golang.org/cmd/cgo/.
 	// (One could always allocate slices of C types, pass those, and
 	// then copy out and convert the contents on return.)
-	var boundsControl_c *C.int = (*C.int)(&boundsControl[0])
+	var boundsControl_c *C.int = &boundsControl[0]
 	var lowerBounds_c *C.double = (*C.double)(&lbfgsb.lowerBounds[0])
 	var upperBounds_c *C.double = (*C.double)(&lbfgsb.upperBounds[0])
 	var x0_c *C.double = (*C.double)(&initialPoint[0])

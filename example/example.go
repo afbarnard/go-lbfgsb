@@ -46,7 +46,7 @@ func main() {
 		G: []float64{0.0, 0.0, 0.0, 0.0, 0.0},
 	}
 
-	// Minimize sphere function
+	// Minimize sphere function without additional parameters
 	fmt.Printf("----- Sphere Function -----\n")
 	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
 	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
@@ -54,8 +54,9 @@ func main() {
 		sphereMin, minimum, exitStatus)
 
 	// Create a new solver for a new problem with a different
-	// dimensionality
-	optimizer = lbfgsb.NewLbfgsb(2)
+	// dimensionality.  Make the tolerances strict.
+	optimizer = lbfgsb.NewLbfgsb(2).
+		SetFTolerance(1e-10).SetGTolerance(1e-10)
 
 	// Create Rosenbrock objective function by composing individual
 	// value and gradient functions

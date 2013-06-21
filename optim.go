@@ -147,7 +147,7 @@ type ExitStatus struct {
 
 // String returns the exit status code and message as text.
 func (es ExitStatus) String() string {
-	return fmt.Sprintf("Exit status: %v; Message: %v", es.Code, es.Message)
+	return fmt.Sprintf("Exit status: %v; Message: %v;", es.Code, es.Message)
 }
 
 // Error allows this ExitStatus to be treated like an error object.
