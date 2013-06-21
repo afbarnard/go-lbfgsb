@@ -300,10 +300,10 @@ contains
 
     ! Loop to do tasks and coordinate the optimization
     do while ( &
-         state(1:7) == 'EVAL_FG' .or. &
-         state(1:5) == 'NEW_X' .or. &
-         state(1:7) == 'WARNING' .or. &
-         state(1:5) == 'START')
+         state == 'EVAL_FG' .or. &
+         state == 'NEW_X' .or. &
+         state == 'WARNING' .or. &
+         state == 'START')
 
        ! Call L-BFGS-B code
        call setulb(dim_c, approximation_size_c, point, &
@@ -318,7 +318,8 @@ contains
        call interpret_task(task, state, message)
 
        ! Act on the current state
-       if (state(1:7) == 'EVAL_FG') then
+       select case (state)
+       case ('EVAL_FG')
           ! Calculate function and gradient.  Try to get away with not
           ! converting Fortran arrays to C.
 
@@ -331,11 +332,11 @@ contains
           status_c = grad_pointer(dim_c, point, grad_value, &
                callback_data, status_message_length_c, status_message_c)
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
-       else if (state(1:7) == 'WARNING') then
+       case ('WARNING')
           ! TODO handle warnings
-       else if (state(1:5) == 'NEW_X') then
+       case ('NEW_X')
           ! TODO handle logging
-       end if
+       end select
     end do
 
     ! Analyze status and state to see how to return
