@@ -53,6 +53,8 @@ func main() {
 	fmt.Printf("expected: %v\n minimum: %v\n  status: %v\n\n",
 		sphereMin, minimum, exitStatus)
 
+	// TODO report optimization statistics
+
 	// Create a new solver for a new problem with a different
 	// dimensionality.  Make the tolerances strict.
 	optimizer = lbfgsb.NewLbfgsb(2).
@@ -78,6 +80,10 @@ func main() {
 		rosenMin, minimum, exitStatus)
 
 	// TODO example with bounds
+
+	// TODO example with user errors
+
+	// TODO example with optimization errors
 }
 
 // Sphere (multi-dimensional parabola) function as a FunctionWithGradient object

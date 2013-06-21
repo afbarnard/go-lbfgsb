@@ -291,8 +291,9 @@ contains
 
     ! Translate debug_c (zero-based verbosity indicator) approximately
     ! to print_control (general signed integer with meaning attached to
-    ! certain values).  TODO consider debug vs. print_control.
+    ! certain values).
     print_control = debug_c - 1
+    ! TODO consider debug vs. print_control and what about logging? (could log via a callback)
 
     ! Initialize the state and task
     state = 'START'
@@ -346,6 +347,8 @@ contains
        min_x_c = point
        min_f_c = func_value
        min_g_c = grad_value
+
+       ! TODO record optimization statistics: iterations, calls, etc.
 
        ! Check for normal or problematic termination
        select case (state)

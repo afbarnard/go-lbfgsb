@@ -6,6 +6,8 @@
 #ifndef __LBFGSB_C_H__
 #define __LBFGSB_C_H__
 
+// TODO declare constants enumerated in Fortran code
+
 // Signature of objective function callback.  Matches 'function
 // objective_function_c', explained in Fortran module.
 typedef int (*lbfgsb_objective_function_type)
