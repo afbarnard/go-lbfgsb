@@ -478,13 +478,16 @@ contains
     integer(c_int), intent(in) :: string_c_length
     character(c_char), intent(out) :: string_c(string_c_length)
     ! Locals
-    integer :: length
+    integer :: length, i
 
     ! Find the length of the shorter string.  Leave room for a
     ! terminating null character.
-    length = min(len(string_f), string_c_length - 1)
-    ! Copy no more than 'length' characters
-    string_c = string_f(1:length)
+    length = min(len_trim(string_f), string_c_length - 1)
+    ! Copy 'length' characters from the Fortran string to the C
+    ! character array.  A string must be converted explicitly to an
+    ! array in Fortran as array assignment broadcasts the string
+    ! (technically a scalar) to each element of the array.
+    forall(i = 1:length) string_c(i) = string_f(i:i)
     ! Fill rest of string (at least one character) with nulls
     string_c(length+1:string_c_length) = c_null_char
   end subroutine convert_f_c_string
