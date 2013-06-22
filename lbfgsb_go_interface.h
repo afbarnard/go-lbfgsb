@@ -21,8 +21,8 @@ int lbfgsb_minimize_c
  double *min_x,
  double *min_f,
  double *min_g,
- int status_message_length,
  char *status_message,
+ int status_message_length,
  int debug
  );
 

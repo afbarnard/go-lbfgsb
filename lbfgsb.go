@@ -360,7 +360,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 		boundsControl_c, lowerBounds_c, upperBounds_c,
 		approximationSize_c, fTolerance_c, gTolerance_c,
 		x0_c, minX_c, minF_c, minG_c,
-		statusMessageLength_c, statusMessage_c, debugLevel_c,
+		statusMessage_c, statusMessageLength_c, debugLevel_c,
 	)
 
 	// Convert outputs
@@ -388,7 +388,7 @@ type callbackData struct {
 func go_objective_function_callback(
 	dim_c C.int, point_c, value_c *C.double,
 	callbackData_c unsafe.Pointer,
-	statusMessageLength_c C.int, statusMessage_c *C.char) (
+	statusMessage_c *C.char, statusMessageLength_c C.int) (
 		statusCode_c C.int) {
 
 	var point []float64
@@ -416,7 +416,7 @@ func go_objective_function_callback(
 func go_objective_gradient_callback(
 	dim_c C.int, point_c, gradient_c *C.double,
 	callbackData_c unsafe.Pointer,
-	statusMessageLength_c C.int, statusMessage_c *C.char) (
+	statusMessage_c *C.char, statusMessageLength_c C.int) (
 		statusCode_c C.int) {
 
 	var point, gradient, gradRet []float64

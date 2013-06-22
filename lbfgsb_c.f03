@@ -71,16 +71,16 @@ module lbfgsb_c
      !
      ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! 'status_message_length': Usable length of 'status_message_c'
-     !    buffer.  Recommend at least 100.
-     !
      ! 'status_message': Returns a message (null-terminated C string)
      !    explaining the exit status.
+     !
+     ! 'status_message_length': Usable length of 'status_message_c'
+     !    buffer.  Recommend at least 100.
      !
      ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_function_c(dim, point, objective_function_value, &
-          callback_data, status_message_length, status_message) &
+          callback_data, status_message, status_message_length) &
           result(status) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
@@ -109,16 +109,16 @@ module lbfgsb_c
      !
      ! 'callback_data': Arbitrary data to be used by the callback.
      !
-     ! 'status_message_length': Usable length of 'status_message_c'
-     !    buffer.  Recommend at least 100.
-     !
      ! 'status_message': Returns a message (null-terminated C string)
      !    explaining the exit status.
+     !
+     ! 'status_message_length': Usable length of 'status_message_c'
+     !    buffer.  Recommend at least 100.
      !
      ! 'status': Returns the exit status code, one of the
      !    LBFGSB_STATUS_* constants defined in enumeration above.
      function objective_gradient_c(dim, point, objective_function_gradient, &
-          callback_data, status_message_length, status_message) &
+          callback_data, status_message, status_message_length) &
           result(status) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
@@ -204,11 +204,11 @@ contains
   !
   ! 'min_g_c': Returns the gradient at the minimum, an array.
   !
-  ! 'status_message_length_c': Usable length of 'status_message_c'
-  !    buffer.  Recommend at least 100.
-  !
   ! 'status_message_c': Message (null-terminated C string) explaining
   !    the exit status.
+  !
+  ! 'status_message_length_c': Usable length of 'status_message_c'
+  !    buffer.  Recommend at least 100.
   !
   ! 'debug_c': Output verbosity level where 0 means no output and larger
   !    values mean increasing output.
@@ -229,7 +229,7 @@ contains
        ! Result
        min_x_c, min_f_c, min_g_c, &
        ! Error, debug
-       status_message_length_c, status_message_c, debug_c) &
+       status_message_c, status_message_length_c, debug_c) &
        result(status_c) bind(c)
 
     implicit none
@@ -326,12 +326,12 @@ contains
 
           ! Call objective function
           status_c = func_pointer(dim_c, point, func_value, &
-               callback_data, status_message_length_c, status_message_c)
+               callback_data, status_message_c, status_message_length_c)
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
 
           ! Call objective function gradient
           status_c = grad_pointer(dim_c, point, grad_value, &
-               callback_data, status_message_length_c, status_message_c)
+               callback_data, status_message_c, status_message_length_c)
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
        case ('WARNING')
           ! TODO handle warnings
@@ -375,7 +375,7 @@ contains
        end select
 
        ! Copy task message into status message
-       call convert_f_c_string(message, status_message_length_c, status_message_c)
+       call convert_f_c_string(message, status_message_c, status_message_length_c)
     else
        ! There was a problem computing the objective or the gradient.
        ! The error message and code were already properly set by the
@@ -481,7 +481,7 @@ contains
 
   ! Converts Fortran strings to C strings ensuring length bounds, null
   ! chars, and all that.
-  subroutine convert_f_c_string(string_f, string_c_length, string_c)
+  subroutine convert_f_c_string(string_f, string_c, string_c_length)
     implicit none
     ! Signature
     character(len=*), intent(in) :: string_f
