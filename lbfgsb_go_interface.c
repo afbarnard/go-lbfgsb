@@ -25,6 +25,8 @@ int lbfgsb_minimize_c
  double *min_x,
  double *min_f,
  double *min_g,
+ int *iters,
+ int *evals,
  char *status_message,
  int status_message_length,
  int debug
@@ -46,6 +48,8 @@ int lbfgsb_minimize_c
      min_x,
      min_f,
      min_g,
+     iters,
+     evals,
      status_message,
      status_message_length,
      debug

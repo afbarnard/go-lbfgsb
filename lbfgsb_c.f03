@@ -204,8 +204,15 @@ contains
   !
   ! 'min_g_c': Returns the gradient at the minimum, an array.
   !
-  ! 'status_message_c': Message (null-terminated C string) explaining
-  !    the exit status.
+  ! 'iters_c': Returns the number of iterations performed.
+  !
+  ! 'evals_c': Returns the number of evaluations performed.  Each
+  !    evaluation consists of both a function and a gradient call (so
+  !    the total number of callbacks is double the number of
+  !    evaluations).
+  !
+  ! 'status_message_c': Returns a message (null-terminated C string)
+  !    explaining the exit status.
   !
   ! 'status_message_length_c': Usable length of 'status_message_c'
   !    buffer.  Recommend at least 100.
@@ -227,7 +234,7 @@ contains
        ! Input
        initial_point_c, &
        ! Result
-       min_x_c, min_f_c, min_g_c, &
+       min_x_c, min_f_c, min_g_c, iters_c, evals_c, &
        ! Error, debug
        status_message_c, status_message_length_c, debug_c) &
        result(status_c) bind(c)
@@ -245,6 +252,7 @@ contains
          upper_bounds_c(dim_c), initial_point_c(dim_c)
     character(c_char), intent(out) :: &
          status_message_c(status_message_length_c)
+    integer(c_int), intent(out) :: iters_c, evals_c
     real(c_double), intent(out) :: min_x_c(dim_c), min_f_c, &
          min_g_c(dim_c)
     integer(c_int) :: status_c
@@ -339,6 +347,11 @@ contains
           ! TODO handle logging
        end select
     end do
+    ! End optimization
+
+    ! Return statistics
+    iters_c = int_state(30)  ! Current iteration
+    evals_c = int_state(34)  ! Total evaluations (each eval = [F(),G()])
 
     ! Analyze status and state to see how to return
     if (status_c == LBFGSB_STATUS_SUCCESS) then
@@ -347,8 +360,6 @@ contains
        min_x_c = point
        min_f_c = func_value
        min_g_c = grad_value
-
-       ! TODO record optimization statistics: iterations, calls, etc.
 
        ! Check for normal or problematic termination
        select case (state)

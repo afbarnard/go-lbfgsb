@@ -50,9 +50,8 @@ func main() {
 	fmt.Printf("----- Sphere Function -----\n")
 	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
 	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
-	PrintResults(sphereMin, minimum, exitStatus)
-
-	// TODO report optimization statistics
+	stats := optimizer.Statistics()
+	PrintResults(sphereMin, minimum, exitStatus, stats)
 
 	// Create a new solver for a new problem with a different
 	// dimensionality.  Make the tolerances strict.
@@ -75,7 +74,8 @@ func main() {
 	fmt.Printf("----- Rosenbrock Function -----\n")
 	x0 = []float64{10.0, 10.0}
 	minimum, exitStatus = optimizer.Minimize(rosenObjective, x0, nil)
-	PrintResults(rosenMin, minimum, exitStatus)
+	stats = optimizer.Statistics()
+	PrintResults(rosenMin, minimum, exitStatus, stats)
 
 	// TODO example with bounds
 
@@ -134,11 +134,13 @@ func Pow2(x float64) float64 {
 
 // Displays expected and actual results of optimization
 func PrintResults(expectedMin, actualMin lbfgsb.PointValueGradient,
-	exitStatus lbfgsb.ExitStatus) {
+	exitStatus lbfgsb.ExitStatus, stats lbfgsb.OptimizationStatistics) {
 
 	fmt.Printf("expected: X: %v\n          F: %v\n          G: %v\n",
 		expectedMin.X, expectedMin.F, expectedMin.G)
 	fmt.Printf(" minimum: X: %v\n          F: %v\n          G: %v\n",
 		actualMin.X, actualMin.F, actualMin.G)
-	fmt.Printf("  status: %v\n\n", exitStatus)
+	fmt.Printf("  status: %v\n", exitStatus)
+	fmt.Printf("   stats: iters: %v; F evals: %v; G evals: %v\n\n",
+		stats.Iterations, stats.FunctionEvaluations, stats.GradientEvaluations)
 }

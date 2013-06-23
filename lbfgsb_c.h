@@ -59,6 +59,8 @@ int lbfgsb_minimize
  double *min_x,
  double *min_f,
  double *min_g,
+ int *iters,
+ int *evals,
 
  // Exit status, debug
  char *status_message,

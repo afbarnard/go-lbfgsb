@@ -28,6 +28,13 @@ const (
 	bufferSize = 250
 )
 
+// Basic statistics about an optimization
+type OptimizationStatistics struct {
+	Iterations int
+	FunctionEvaluations int
+	GradientEvaluations int
+}
+
 // NewLbfgsb creates, initializes, and returns a new Lbfgsb solver
 // object.  Equivalent to 'new(Lbfgsb).Init(dimensionality)'.  A
 // zero-value Lbfgsb object is valid and needs no explicit construction.
@@ -65,6 +72,9 @@ type Lbfgsb struct {
 	fTolerance        float64
 	gTolerance        float64
 	debugLevel        int
+
+	// Statistics (do not embed or members will be public)
+	statistics OptimizationStatistics
 }
 
 // Init initializes this Lbfgsb solver for problems of the given
@@ -349,6 +359,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 	var minX_c *C.double = (*C.double)(&minimum.X[0])
 	var minF_c *C.double = (*C.double)(&minimum.F)
 	var minG_c *C.double = (*C.double)(&minimum.G[0])
+	var iters_c, evals_c C.int
 	// Status message
 	statusMessageLength_c := C.int(bufferSize)
 	var statusMessageBuffer [bufferSize]C.char
@@ -359,7 +370,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 		callbackData_c, dim_c,
 		boundsControl_c, lowerBounds_c, upperBounds_c,
 		approximationSize_c, fTolerance_c, gTolerance_c,
-		x0_c, minX_c, minF_c, minG_c,
+		x0_c, minX_c, minF_c, minG_c, &iters_c, &evals_c,
 		statusMessage_c, statusMessageLength_c, debugLevel_c,
 	)
 
@@ -370,7 +381,20 @@ func (lbfgsb *Lbfgsb) Minimize(
 	// Minimum already populated because pointers to its members were
 	// passed into C/Fortran
 
+	// Save statistics
+	lbfgsb.statistics.Iterations = int(iters_c)
+	lbfgsb.statistics.FunctionEvaluations = int(evals_c)
+	// Number of function and gradient evaluations is always the same
+	lbfgsb.statistics.GradientEvaluations = lbfgsb.statistics.FunctionEvaluations
+
 	return
+}
+
+// Statistics returns some statistics about the most recent
+// minimization: the total number of iterations and the total numbers of
+// function and gradient evaluations.
+func (lbfgsb *Lbfgsb) Statistics() (OptimizationStatistics) {
+	return lbfgsb.statistics
 }
 
 // callbackData is a container for the actual objective function and
