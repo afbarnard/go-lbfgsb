@@ -90,31 +90,45 @@ Building this software requires:
 Build
 -----
 
-1. Download this package into a Go workspace.
+1. Download this package into the Go workspace for the Go program that
+   will use it.  Treat this package just as if it was part of your Go
+   code in terms of where you want to put it and how it will build.  For
+   example, you could place it in the directory
+   `~/go-dev/src/proj1/optim/go-lbfgsb`.
 
-2. Build the Fortran code into a library.
+2. Build the Fortran code into a library.  Change to the directory where
+   you placed this package and run make.
 
    ```shell
+   $ cd ~/go-dev/src/proj1/optim/go-lbfgsb
    $ make
    ```
 
    This builds a static library, `liblbfgsb.a`, that will be linked into
    your Go program.
 
-3. Import the `go-lbfgsb` module.  Build your Go program normally.
+3. Import the `go-lbfgsb` module into your program as if it was any
+   other "local" package that is part of your code.  Build your Go
+   program normally.
 
    ```go
-   import lbfgsb "github.com/afbarnard/go-lbfgsb"
+   import lbfgsb "proj1/optim/go-lbfgsb"
    ```
 
    ```shell
    $ go build
    ```
 
-I have not yet figured out how to use the Go build system to build
-everything, so the Fortran code must be separately built into a library
-before building any Go programs.  I hope to solve this issue and thus
-enable `go get` and other conveniences.
+Repeat step 3 as needed.  Steps 1 and 2 do not need to be repeated
+unless you want to update the package.
+
+For your convenience, I hope to find a way to have `go get` download and
+build this package.  Since the Go/Cgo build system does not support
+foreign language files, one would still have to run `make`, but
+otherwise you could treat this package as any other third-party package
+and not have to "integrate" it with your program.  Doing a `go get -d
+github.com/afbarnard/go-lbfgsb` and a `make` almost works except that I
+cannot seem to get the linker to cooperate.
 
 
 Contact
