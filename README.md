@@ -94,10 +94,10 @@ Build
    will use it.  Treat this package just as if it was part of your Go
    code in terms of where you want to put it and how it will build.  For
    example, you could place it in the directory
-   `~/go-dev/src/proj1/optim/go-lbfgsb`.
+   `~/go-dev/src/proj1/optim/go-lbfgsb` if you were working on `proj1`.
 
 2. Build the Fortran code into a library.  Change to the directory where
-   you placed this package and run make.
+   you placed this package and run `make`.
 
    ```shell
    $ cd ~/go-dev/src/proj1/optim/go-lbfgsb
@@ -126,9 +126,7 @@ For your convenience, I hope to find a way to have `go get` download and
 build this package.  Since the Go/Cgo build system does not support
 foreign language files, one would still have to run `make`, but
 otherwise you could treat this package as any other third-party package
-and not have to "integrate" it with your program.  Doing a `go get -d
-github.com/afbarnard/go-lbfgsb` and a `make` almost works except that I
-cannot seem to get the linker to cooperate.
+and not have to "integrate" it with your program.
 
 
 Contact
