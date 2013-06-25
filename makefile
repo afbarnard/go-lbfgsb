@@ -11,7 +11,7 @@
 # Compiler (I'm only worrying about GCC for now since it supports Fortran, C, and Go.)
 compiler := gcc
 # General compiler options, e.g. -O -g
-compile_options :=
+compile_options := -g
 # General compiler warnings
 compile_warnings := -Wall -Wextra
 # Fortran compiler options.  Disallow implicit variables.
@@ -32,7 +32,7 @@ all: liblbfgsb.a
 
 # Fortran 2003 compilation
 %.o: %.f03
-	$(compiler) $(compile_options) $(compile_warnings) $(compile_options_fortran) -std=f2003 -c $< -o $@
+	$(compiler) $(compile_options) $(compile_warnings) $(compile_options_fortran) -fbounds-check -std=f2003 -c $< -o $@
 
 # Dependencies
 
@@ -43,6 +43,8 @@ lbfgsb/lbfgsb.o: lbfgsb/blas.o lbfgsb/linpack.o lbfgsb/timer.o
 # Go-Fortran L-BFGS-B interface
 lbfgsb.o: lbfgsb/lbfgsb.o
 lbfgsb_c.o: lbfgsb.o
+
+# Libraries and executables
 
 # Library
 liblbfgsb.a: lbfgsb_c.o lbfgsb.o lbfgsb/lbfgsb.o lbfgsb/blas.o lbfgsb/linpack.o lbfgsb/timer.o
