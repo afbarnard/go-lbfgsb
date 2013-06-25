@@ -28,13 +28,6 @@ const (
 	bufferSize = 250
 )
 
-// Basic statistics about an optimization
-type OptimizationStatistics struct {
-	Iterations int
-	FunctionEvaluations int
-	GradientEvaluations int
-}
-
 // NewLbfgsb creates, initializes, and returns a new Lbfgsb solver
 // object.  Equivalent to 'new(Lbfgsb).Init(dimensionality)'.  A
 // zero-value Lbfgsb object is valid and needs no explicit construction.
@@ -393,7 +386,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 // Statistics returns some statistics about the most recent
 // minimization: the total number of iterations and the total numbers of
 // function and gradient evaluations.
-func (lbfgsb *Lbfgsb) Statistics() (OptimizationStatistics) {
+func (lbfgsb *Lbfgsb) OptimizationStatistics() (OptimizationStatistics) {
 	return lbfgsb.statistics
 }
 

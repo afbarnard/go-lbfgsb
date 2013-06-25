@@ -50,7 +50,7 @@ func main() {
 	fmt.Printf("----- Sphere Function -----\n")
 	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
 	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
-	stats := optimizer.Statistics()
+	stats := optimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
 
 	// Create a new solver for a new problem with a different
@@ -74,7 +74,7 @@ func main() {
 	fmt.Printf("----- Rosenbrock Function -----\n")
 	x0 = []float64{10.0, 10.0}
 	minimum, exitStatus = optimizer.Minimize(rosenObjective, x0, nil)
-	stats = optimizer.Statistics()
+	stats = optimizer.OptimizationStatistics()
 	PrintResults(rosenMin, minimum, exitStatus, stats)
 
 	// TODO example with bounds

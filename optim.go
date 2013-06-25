@@ -164,3 +164,18 @@ func (es ExitStatus) AsError() error {
 	}
 	return nil
 }
+
+// OptimizationStatistics is a container for basic statistics about an
+// optimization run.  Values can be negative to indicate they were not
+// tracked.
+type OptimizationStatistics struct {
+	Iterations int
+	FunctionEvaluations int
+	GradientEvaluations int
+}
+
+// OptimizationStatisticser is an object that can supply statistics
+// about an optimization run.
+type OptimizationStatisticser interface {
+	OptimizationStatistics() OptimizationStatistics
+}
