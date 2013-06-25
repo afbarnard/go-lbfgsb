@@ -370,7 +370,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 	// Convert outputs
 	// Exit status codes match between ExitStatusCode and the C enum
 	exitStatus.Code = ExitStatusCode(statusCode_c)
-	exitStatus.Message = C.GoStringN(statusMessage_c, statusMessageLength_c)
+	exitStatus.Message = C.GoString(statusMessage_c)
 	// Minimum already populated because pointers to its members were
 	// passed into C/Fortran
 
