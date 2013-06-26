@@ -25,7 +25,7 @@ int lbfgsb_minimize_c
  int *evals,
  char *status_message,
  int status_message_length,
- int debug
+ int print_control
  );
 
 #endif

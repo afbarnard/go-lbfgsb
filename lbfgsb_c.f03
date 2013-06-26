@@ -217,8 +217,16 @@ contains
   ! 'status_message_length_c': Usable length of 'status_message_c'
   !    buffer.  Recommend at least 100.
   !
-  ! 'debug_c': Output verbosity level where 0 means no output and larger
-  !    values mean increasing output.
+  ! 'print_control_c': Fortran output verbosity level.  If set to
+  !    generate output, a summary file 'iterate.dat' is also generated.
+  !
+  !    print_control_c =
+  !       * 0: no output
+  !       * 1: print one summary at the end
+  !       * 2-99: print F and G every so many iterations
+  !       * 100: print details of every iteration but not X and G
+  !       * 101: also print changes of the active set and the final X
+  !       * 102: print details of every iteration including X and G
   !
   ! 'status_c': Returns the exit status code, one of the LBFGSB_STATUS_*
   !    constants defined in enumeration above.
@@ -235,8 +243,8 @@ contains
        initial_point_c, &
        ! Result
        min_x_c, min_f_c, min_g_c, iters_c, evals_c, &
-       ! Error, debug
-       status_message_c, status_message_length_c, debug_c) &
+       ! Exit status, printing
+       status_message_c, status_message_length_c, print_control_c) &
        result(status_c) bind(c)
 
     implicit none
@@ -245,7 +253,7 @@ contains
     type(c_funptr), intent(in), value :: func, grad
     type(c_ptr), intent(in), value :: callback_data
     integer(c_int), intent(in), value :: dim_c, approximation_size_c, &
-         status_message_length_c, debug_c
+         status_message_length_c, print_control_c
     real(c_double), intent(in), value :: f_tolerance_c, g_tolerance_c
     integer(c_int), intent(in) :: bounds_control_c(dim_c)
     real(c_double), intent(in) :: lower_bounds_c(dim_c), &
@@ -297,10 +305,9 @@ contains
     ! terms of digits of precision, analogous to g_tolerance.
     f_factor = f_tolerance_c / epsilon(1d0)
 
-    ! Translate debug_c (zero-based verbosity indicator) approximately
-    ! to print_control (general signed integer with meaning attached to
-    ! certain values).
-    print_control = debug_c - 1
+    ! Translate print_control_c which is a zero-based version of
+    ! print_control (which is possibly negative)
+    print_control = print_control_c - 1
     ! TODO consider debug vs. print_control and what about logging? (could log via a callback)
 
     ! Initialize the state and task
@@ -396,6 +403,8 @@ contains
        min_f_c = 0d0
        min_g_c = 0d0
     end if
+
+    ! TODO flush Fortran output
   end function lbfgsb_minimize
 
   ! Interprets the various task strings coming out of L-BFGS-B.  Maps

@@ -62,10 +62,10 @@ int lbfgsb_minimize
  int *iters,
  int *evals,
 
- // Exit status, debug
+ // Exit status, printing
  char *status_message,
  int status_message_length,
- int debug
+ int print_control
 );
 
 #endif

@@ -29,7 +29,7 @@ int lbfgsb_minimize_c
  int *evals,
  char *status_message,
  int status_message_length,
- int debug
+ int print_control
  )
 {
   return lbfgsb_minimize
@@ -52,6 +52,6 @@ int lbfgsb_minimize_c
      evals,
      status_message,
      status_message_length,
-     debug
+     print_control
      );
 }

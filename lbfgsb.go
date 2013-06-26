@@ -64,7 +64,7 @@ type Lbfgsb struct {
 	approximationSize int
 	fTolerance        float64
 	gTolerance        float64
-	debugLevel        int
+	printControl      int
 
 	// Statistics (do not embed or members will be public)
 	statistics OptimizationStatistics
@@ -222,13 +222,15 @@ func (lbfgsb *Lbfgsb) SetGTolerance(gTolerance float64) *Lbfgsb {
 	return lbfgsb
 }
 
-// SetDebugLevel sets the level of output verbosity.  Defaults to 0, no
-// output.
-func (lbfgsb *Lbfgsb) SetDebugLevel(level int) *Lbfgsb {
-	if level < 0 {
-		panic(fmt.Errorf("Lbfgsb: Debug level %d < 0.  Expected >= 0.", level))
+// SetFortranPrintControl sets the level of output verbosity from the
+// Fortran L-BFGS-B code.  Defaults to 0, no output.  Ranges from 0 to
+// 102: 1 displays a summary, 100 displays details of each iteration,
+// 102 adds vectors (X and G) to the output.
+func (lbfgsb *Lbfgsb) SetFortranPrintControl(verbosity int) *Lbfgsb {
+	if verbosity < 0 {
+		panic(fmt.Errorf("Lbfgsb: Print control %d < 0.  Expected >= 0.", verbosity))
 	}
-	lbfgsb.debugLevel = level
+	lbfgsb.printControl = verbosity
 	return lbfgsb
 }
 
@@ -291,12 +293,12 @@ func (lbfgsb *Lbfgsb) Minimize(
 		}
 	}
 	// Debug level
-	debugLevel := lbfgsb.debugLevel
-	if paramVal, ok = parameters["debugLevel"]; ok {
-		debugLevel, ok = paramVal.(int)
-		if !ok || debugLevel < 0 {
+	printControl := lbfgsb.printControl
+	if paramVal, ok = parameters["printControl"]; ok {
+		printControl, ok = paramVal.(int)
+		if !ok || printControl < 0 {
 			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: debugLevel: %v.  Expected integer >= 0.", paramVal)
+			exitStatus.Message = fmt.Sprintf("Bad parameter value: printControl: %v.  Expected integer >= 0.", paramVal)
 			return
 		}
 	}
@@ -337,7 +339,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 	approximationSize_c := C.int(approximationSize)
 	fTolerance_c := C.double(fTolerance)
 	gTolerance_c := C.double(gTolerance)
-	debugLevel_c := C.int(debugLevel)
+	printControl_c := C.int(printControl)
 
 	// Prepare buffers and arrays for C.  Avoid allocation in C land by
 	// allocating compatible things in Go and passing their addresses.
@@ -364,7 +366,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 		boundsControl_c, lowerBounds_c, upperBounds_c,
 		approximationSize_c, fTolerance_c, gTolerance_c,
 		x0_c, minX_c, minF_c, minG_c, &iters_c, &evals_c,
-		statusMessage_c, statusMessageLength_c, debugLevel_c,
+		statusMessage_c, statusMessageLength_c, printControl_c,
 	)
 
 	// Convert outputs
