@@ -416,6 +416,7 @@ func go_objective_function_callback(
 	cbData := (*callbackData)(callbackData_c)
 
 	// Evaluate the objective function
+	// TODO handle panics
 	value := cbData.objective.Evaluate(point)
 
 	// Convert outputs
@@ -444,6 +445,7 @@ func go_objective_gradient_callback(
 	cbData := (*callbackData)(callbackData_c)
 
 	// Evaluate the gradient of the objective function
+	// TODO handle panics
 	gradRet = cbData.objective.EvaluateGradient(point)
 
 	// Convert outputs

@@ -4,6 +4,10 @@
 // Main package providing some examples of how to use the lbfgsb
 // package.
 
+// TODO example program for Fortran
+// TODO example program for C
+
+// TODO fix these build instructions
 // Build by running the following two commands:
 //
 //     $ go get github.com/afbarnard/go-lbfgsb
