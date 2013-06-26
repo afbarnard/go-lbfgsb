@@ -33,8 +33,9 @@ type ObjectiveFunctionMinimizer interface {
 	// interpretation may fail if the given value cannot be converted to
 	// a valid parameter value.  Any other contents of the parameter map
 	// will be ignored.
-	Minimize(objective FunctionWithGradient, initialPoint []float64, parameters map[string]interface{}) (
-		minimum PointValueGradient, exitStatus ExitStatus)
+	Minimize(objective FunctionWithGradient, initialPoint []float64,
+		parameters map[string]interface{}) (
+			minimum PointValueGradient, exitStatus ExitStatus)
 }
 
 ////////////////////////////////////////
@@ -169,7 +170,7 @@ func (es ExitStatus) AsError() error {
 // optimization run.  Values can be negative to indicate they were not
 // tracked.
 type OptimizationStatistics struct {
-	Iterations int
+	Iterations          int
 	FunctionEvaluations int
 	GradientEvaluations int
 }

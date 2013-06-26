@@ -89,7 +89,7 @@ func main() {
 }
 
 // Sphere (multi-dimensional parabola) function as a FunctionWithGradient object
-type SphereFunction struct {}
+type SphereFunction struct{}
 
 // Sphere function
 func (sf SphereFunction) Evaluate(point []float64) (value float64) {
@@ -110,9 +110,9 @@ func (sf SphereFunction) EvaluateGradient(point []float64) (gradient []float64) 
 
 // Rosenbrock function value
 func RosenbrockFunction(point []float64) (value float64) {
-	for i := 0; i < len(point) - 1; i++ {
-		value += Pow2(1.0 - point[i]) +
-			100.0 * Pow2(point[i + 1] - Pow2(point[i]))
+	for i := 0; i < len(point)-1; i++ {
+		value += Pow2(1.0-point[i]) +
+			100.0*Pow2(point[i+1]-Pow2(point[i]))
 	}
 	return
 }
@@ -120,14 +120,14 @@ func RosenbrockFunction(point []float64) (value float64) {
 // Rosenbrock function gradient
 func RosenbrockGradient(point []float64) (gradient []float64) {
 	gradient = make([]float64, len(point))
-	gradient[0] = -400.0 * point[0] * (point[1] - Pow2(point[0])) -
-		2.0 * (1.0 - point[0])
+	gradient[0] = -400.0*point[0]*(point[1]-Pow2(point[0])) -
+		2.0*(1.0-point[0])
 	var i int
-	for i = 1; i < len(point) - 1; i++ {
-		gradient[i] = -400.0 * point[i] * (point[i + 1] - Pow2(point[i])) -
-			2.0 * (1.0 - 101.0 * point[i] + 100.0 * Pow2(point[i - 1]))
+	for i = 1; i < len(point)-1; i++ {
+		gradient[i] = -400.0*point[i]*(point[i+1]-Pow2(point[i])) -
+			2.0*(1.0-101.0*point[i]+100.0*Pow2(point[i-1]))
 	}
-	gradient[i] = 200.0 * (point[i] - Pow2(point[i - 1]))
+	gradient[i] = 200.0 * (point[i] - Pow2(point[i-1]))
 	return
 }
 

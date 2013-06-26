@@ -209,7 +209,7 @@ func WrapCArrayAsGoSlice_Float64(array *C.double, length int,
 
 // Converts a C array to a Go slice by converting each array element
 func ConvertCArrayToGoSlice_Float64(array *C.double, length int,
-	slice []float64) ([]float64) {
+	slice []float64) []float64 {
 
 	// Allocate a new slice if needed
 	if slice == nil || len(slice) != length {
@@ -222,7 +222,7 @@ func ConvertCArrayToGoSlice_Float64(array *C.double, length int,
 	stride := unsafe.Sizeof(dummy)
 	var address uintptr
 	for i := 0; i < length; i++ {
-		address = base + uintptr(i) * stride
+		address = base + uintptr(i)*stride
 		slice[i] = float64(*(*C.double)(unsafe.Pointer(address)))
 	}
 	return slice

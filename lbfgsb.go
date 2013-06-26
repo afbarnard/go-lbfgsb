@@ -388,7 +388,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 // Statistics returns some statistics about the most recent
 // minimization: the total number of iterations and the total numbers of
 // function and gradient evaluations.
-func (lbfgsb *Lbfgsb) OptimizationStatistics() (OptimizationStatistics) {
+func (lbfgsb *Lbfgsb) OptimizationStatistics() OptimizationStatistics {
 	return lbfgsb.statistics
 }
 

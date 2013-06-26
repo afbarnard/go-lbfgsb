@@ -12,11 +12,11 @@ import (
 
 // Class to combine objective function and gradient into one object.
 // The sphere function is just a multi-dimensional parabola.
-type SphereFunction struct {}
+type SphereFunction struct{}
 
 // Sphere function
 func (sf *SphereFunction) Evaluate(point []float64) (value float64) {
-	for _, coord := range(point) {
+	for _, coord := range point {
 		value += coord * coord
 	}
 	return
@@ -25,7 +25,7 @@ func (sf *SphereFunction) Evaluate(point []float64) (value float64) {
 // Sphere function gradient
 func (sf *SphereFunction) EvaluateGradient(point []float64) (grad []float64) {
 	grad = make([]float64, len(point))
-	for i, coord := range(point) {
+	for i, coord := range point {
 		grad[i] = 2.0 * coord
 	}
 	return
