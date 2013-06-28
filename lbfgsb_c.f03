@@ -58,7 +58,8 @@ module lbfgsb_c
   public objective_function_c, objective_gradient_c
   abstract interface
 
-     ! Signature of objective function C callback.
+     ! Signature of objective function C callback that computes the
+     ! value of the objective function at a point.
      !
      ! 'dim': Dimensionality of the optimization space; the size of the
      !    arrays used for points, gradients.
@@ -96,7 +97,8 @@ module lbfgsb_c
        integer(c_int) :: status
      end function objective_function_c
 
-     ! Signature of objective gradient C callback.
+     ! Signature of objective gradient C callback that computes the
+     ! gradient of the objective function at a point.
      !
      ! 'dim': Dimensionality of the optimization space; the size of the
      !    arrays used for points, gradients.
@@ -131,6 +133,57 @@ module lbfgsb_c
             status_message(status_message_length)
        integer(c_int) :: status
      end function objective_gradient_c
+
+     ! Signature of logging C callback that (optionally) logs
+     ! information about each iteration in the optimization.
+     !
+     ! 'iteration': Number of current iteration.
+     !
+     ! 'fg_evals': Number of evaluations in this iteration.  Each
+     !    evaluation is both a function and a gradient call.
+     !
+     ! 'fg_evals_total': Total number of evaluations so far.
+     !
+     ! 'step': Length of the step taken towards the minimum in this
+     !    iteration.
+     !
+     ! 'dim': Dimensionality of the optimization space; the size of the
+     !    arrays used for points, gradients.
+     !
+     ! 'x': Current point in optimization space.
+     !
+     ! 'f': Current objective function value.
+     !
+     ! 'g': Current objective function gradient.
+     !
+     ! 'f_delta': Change in objective function value over this
+     !    iteration.
+     !
+     ! 'f_delta_bound': Upper bound on 'f_delta' required for
+     !    convergence.
+     !
+     ! 'g_norm': Infinity norm of the projected gradient.
+     !
+     ! 'g_norm_bound': Upper bound on 'g_norm' required for convergence.
+     !
+     ! 'error': Returns the error status, one of LBFGSB_STATUS_SUCCESS
+     !    or LBFGSB_STATUS_INTERNAL_ERROR.  Returning an error will take
+     !    down the whole optimization, so only return an error if the
+     !    optimization cannot continue.  Logging issues may or may not
+     !    be that serious depending on the application.
+     function log_function_c(iteration, fg_evals, fg_evals_total, step, &
+          dim, x, f, g, &
+          f_delta, f_delta_bound, g_norm, g_norm_bound) &
+          result(error) bind(c)
+       use, intrinsic :: iso_c_binding
+       implicit none
+       integer(c_int), intent(in), value :: iteration, fg_evals, &
+            fg_evals_total, dim
+       real(c_double), intent(in), value :: step, f, &
+            f_delta, f_delta_bound, g_norm, g_norm_bound
+       real(c_double), intent(in) :: x(dim), g(dim)
+       integer(c_int) :: error
+     end function log_function_c
 
   end interface
 
@@ -194,7 +247,7 @@ contains
   !
   !    |P(g(x[i]))|inf <= g_tolerance
   !
-  !    where P(g(x)) is the projected gradient at x.
+  !    where P(g(x)) is the projected gradient of x.
   !
   ! 'initial_point_c': Point from which minimization starts, x[0].
   !
@@ -211,12 +264,6 @@ contains
   !    the total number of callbacks is double the number of
   !    evaluations).
   !
-  ! 'status_message_c': Returns a message (null-terminated C string)
-  !    explaining the exit status.
-  !
-  ! 'status_message_length_c': Usable length of 'status_message_c'
-  !    buffer.  Recommend at least 100.
-  !
   ! 'print_control_c': Fortran output verbosity level.  If set to
   !    generate output, a summary file 'iterate.dat' is also generated.
   !
@@ -227,6 +274,15 @@ contains
   !       * 100: print details of every iteration but not X and G
   !       * 101: also print changes of the active set and the final X
   !       * 102: print details of every iteration including X and G
+  !
+  ! 'log_function': Pointer to logging function whose signature is given
+  !    by log_function_c or lbfgsb_log_function_type.  May be null.
+  !
+  ! 'status_message_c': Returns a message (null-terminated C string)
+  !    explaining the exit status.
+  !
+  ! 'status_message_length_c': Usable length of 'status_message_c'
+  !    buffer.  Recommend at least 100.
   !
   ! 'status_c': Returns the exit status code, one of the LBFGSB_STATUS_*
   !    constants defined in enumeration above.
@@ -243,17 +299,19 @@ contains
        initial_point_c, &
        ! Result
        min_x_c, min_f_c, min_g_c, iters_c, evals_c, &
-       ! Exit status, printing
-       status_message_c, status_message_length_c, print_control_c) &
+       ! Printing, logging
+       print_control_c, log_function, &
+       ! Exit status
+       status_message_c, status_message_length_c) &
        result(status_c) bind(c)
 
     implicit none
 
     ! Signature
-    type(c_funptr), intent(in), value :: func, grad
+    type(c_funptr), intent(in), value :: func, grad, log_function
     type(c_ptr), intent(in), value :: callback_data
     integer(c_int), intent(in), value :: dim_c, approximation_size_c, &
-         status_message_length_c, print_control_c
+         print_control_c, status_message_length_c
     real(c_double), intent(in), value :: f_tolerance_c, g_tolerance_c
     integer(c_int), intent(in) :: bounds_control_c(dim_c)
     real(c_double), intent(in) :: lower_bounds_c(dim_c), &
@@ -269,6 +327,7 @@ contains
     ! Fortran versions of arguments
     procedure(objective_function_c), pointer :: func_pointer
     procedure(objective_gradient_c), pointer :: grad_pointer
+    procedure(log_function_c), pointer :: log_pointer
     real(dp) :: point(dim_c)
     ! Variables and memory for L-BFGS-B
     integer :: print_control
@@ -285,13 +344,17 @@ contains
          2 * approximation_size_c * dim_c + 5 * dim_c + &
          11 * approximation_size_c ** 2 + 8 * approximation_size_c &
          )
+    ! Other locals
+    real(dp) :: step_length, f_delta
 
     ! Convert inputs from C types to Fortran types
     call c_f_procpointer(func, func_pointer)
     call c_f_procpointer(grad, grad_pointer)
+    if (c_associated(log_function)) &
+         call c_f_procpointer(log_function, log_pointer)
     ! Copy initial_point_c to point because point is written to
     point = initial_point_c
-    ! Other arrays do not need to be copied because there binary
+    ! Other arrays do not need to be copied because their binary
     ! representations are compatible (but I'm not sure if this will
     ! always be the case).  Plus the other arrays are only read, not
     ! written.
@@ -342,16 +405,32 @@ contains
           ! Call objective function
           status_c = func_pointer(dim_c, point, func_value, &
                callback_data, status_message_c, status_message_length_c)
+          ! Terminate optimization on any error
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
 
           ! Call objective function gradient
           status_c = grad_pointer(dim_c, point, grad_value, &
                callback_data, status_message_c, status_message_length_c)
+          ! Terminate optimization on any error
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
        case ('WARNING')
           ! TODO handle warnings
        case ('NEW_X')
-          ! TODO handle logging
+          ! Call the logging function if one was given
+          if (c_associated(log_function)) then
+             ! Compute some of the values not otherwise available
+             step_length = real_state(4) * real_state(14)
+             f_delta = abs(real_state(2) - func_value) / &
+                  max(abs(real_state(2)), abs(func_value), 1d0)
+             ! Log the information
+             status_c = log_pointer( &
+                  int_state(30), int_state(36), int_state(34), step_length, &
+                  dim_c, point, func_value, grad_value, &
+                  f_delta, real_state(3), real_state(13), g_tolerance_c &
+                  )
+             ! Terminate optimization on any error
+             if (status_c /= LBFGSB_STATUS_SUCCESS) exit
+          end if
        end select
     end do
     ! End optimization
