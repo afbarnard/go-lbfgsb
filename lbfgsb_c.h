@@ -11,7 +11,8 @@
 // Signature of objective function callback.  Matches 'function
 // objective_function_c', explained in Fortran module.
 typedef int (*lbfgsb_objective_function_type)
-(int dim,
+(
+ int dim,
  double *point,
  double *objective_function_value,
  void *callback_data,
@@ -22,12 +23,32 @@ typedef int (*lbfgsb_objective_function_type)
 // Signature of objective gradient callback.  Matches 'function
 // objective_gradient_c', explained in Fortran module.
 typedef int (*lbfgsb_objective_gradient_type)
-(int dim,
+(
+ int dim,
  double *point,
  double *objective_function_gradient,
  void *callback_data,
  char *status_message,
  int status_message_length
+ );
+
+// Signature of logging function callback.  Matches 'function
+// log_function_c', explained in Fortran module.
+typedef int (*lbfgsb_log_function_type)
+(
+ void *callback_data,
+ int iteration,
+ int fg_evals,
+ int fg_evals_total,
+ double step_length,
+ int dim,
+ double *x,
+ double f,
+ double *g,
+ double f_delta,
+ double f_delta_bound,
+ double g_norm,
+ double g_norm_bound
  );
 
 // Signature of L-BFGS-B minimizer.  Matches 'function lbfgsb_minimize',
@@ -47,7 +68,7 @@ int lbfgsb_minimize
  double *lower_bounds,
  double *upper_bounds,
 
- // Minimization parameters
+ // Parameters
  int approximation_size,
  double f_tolerance,
  double g_tolerance,
@@ -62,10 +83,14 @@ int lbfgsb_minimize
  int *iters,
  int *evals,
 
- // Exit status, printing
+ // Printing, logging
+ int fortran_print_control,
+ lbfgsb_log_function_type log_function,
+ void *log_function_callback_data,
+
+ // Exit status
  char *status_message,
- int status_message_length,
- int print_control
-);
+ int status_message_length
+ );
 
 #endif

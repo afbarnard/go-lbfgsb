@@ -327,9 +327,11 @@ func (lbfgsb *Lbfgsb) Minimize(
 		lbfgsb.upperBounds = make([]float64, dim)
 	}
 
-	// Set up callback
+	// Set up callbacks
 	callbackData := &callbackData{objective: objective}
 	callbackData_c := unsafe.Pointer(callbackData)
+	doLogging_c := C.int(0)  // TODO
+	logFunctionCallbackData_c := unsafe.Pointer(uintptr(0))  // TODO
 
 	// Allocate arrays for return value
 	minimum.X = make([]float64, dim)
@@ -366,7 +368,8 @@ func (lbfgsb *Lbfgsb) Minimize(
 		boundsControl_c, lowerBounds_c, upperBounds_c,
 		approximationSize_c, fTolerance_c, gTolerance_c,
 		x0_c, minX_c, minF_c, minG_c, &iters_c, &evals_c,
-		statusMessage_c, statusMessageLength_c, printControl_c,
+		printControl_c, doLogging_c, logFunctionCallbackData_c,
+		statusMessage_c, statusMessageLength_c,
 	)
 
 	// Convert outputs
@@ -430,7 +433,7 @@ func go_objective_function_callback(
 // go_objective_gradient_callback is an adapter between the C callback
 // and the Go callback for evaluating the objective gradient.  Exported
 // to C for use as a function pointer.  Must match the signature of
-// objective_gradient_type in gd_c.h.
+// objective_gradient_type in lbfgsb_c.h.
 //
 //export go_objective_gradient_callback
 func go_objective_gradient_callback(
@@ -454,6 +457,23 @@ func go_objective_gradient_callback(
 	wrapCArrayAsGoSlice_Float64(gradient_c, dim, &gradient)
 	copy(gradient, gradRet)
 
+	return
+}
+
+// go_log_function_callback is an adapter between the C callback and the
+// Go callback for logging information about each iteration.  Exported
+// to C for use as a function pointer.  Must match the signature of
+// lbfgsb_log_function_type in lbfgsb_c.h.
+//
+//export go_log_function_callback
+func go_log_function_callback(
+	logCallBackData_c unsafe.Pointer,
+	iteration_c, fgEvals_c, fgEvalsTotal_c C.int, stepLength_c C.double,
+	dim_c C.int, x *C.double, f C.double, g *C.double,
+	fDelta, fDeltaBound, gNorm, gNormBound C.double) (
+		statusCode_c C.int) {
+
+	// TODO go_log_function_callback
 	return
 }
 

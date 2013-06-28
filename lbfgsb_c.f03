@@ -70,7 +70,8 @@ module lbfgsb_c
      ! 'objective_function_value': Returns the value of the objective
      !    function.
      !
-     ! 'callback_data': Arbitrary data to be used by the callback.
+     ! 'callback_data': Arbitrary data to be used by the callback.  May
+     !    be null.
      !
      ! 'status_message': Returns a message (null-terminated C string)
      !    explaining the exit status.
@@ -109,7 +110,8 @@ module lbfgsb_c
      ! 'objective_function_gradient': Returns the value of the objective
      !    gradient.
      !
-     ! 'callback_data': Arbitrary data to be used by the callback.
+     ! 'callback_data': Arbitrary data to be used by the callback.  May
+     !    be null.
      !
      ! 'status_message': Returns a message (null-terminated C string)
      !    explaining the exit status.
@@ -135,7 +137,11 @@ module lbfgsb_c
      end function objective_gradient_c
 
      ! Signature of logging C callback that (optionally) logs
-     ! information about each iteration in the optimization.
+     ! information about each iteration in the optimization.  All the
+     ! values are inputs to the logging function.
+     !
+     ! 'callback_data': Arbitrary data to be used by the callback.  May
+     !    be null.
      !
      ! 'iteration': Number of current iteration.
      !
@@ -171,15 +177,17 @@ module lbfgsb_c
      !    down the whole optimization, so only return an error if the
      !    optimization cannot continue.  Logging issues may or may not
      !    be that serious depending on the application.
-     function log_function_c(iteration, fg_evals, fg_evals_total, step, &
+     function log_function_c(callback_data, &
+          iteration, fg_evals, fg_evals_total, step_length, &
           dim, x, f, g, &
           f_delta, f_delta_bound, g_norm, g_norm_bound) &
           result(error) bind(c)
        use, intrinsic :: iso_c_binding
        implicit none
+       type(c_ptr), intent(in), value :: callback_data
        integer(c_int), intent(in), value :: iteration, fg_evals, &
             fg_evals_total, dim
-       real(c_double), intent(in), value :: step, f, &
+       real(c_double), intent(in), value :: step_length, f, &
             f_delta, f_delta_bound, g_norm, g_norm_bound
        real(c_double), intent(in) :: x(dim), g(dim)
        integer(c_int) :: error
@@ -278,6 +286,10 @@ contains
   ! 'log_function': Pointer to logging function whose signature is given
   !    by log_function_c or lbfgsb_log_function_type.  May be null.
   !
+  ! 'log_function_callback_data': Pointer to user-specified data passed
+  !    to 'log_function' when it is called.  May be null (or anything)
+  !    because this function does not process it, only passes it along.
+  !
   ! 'status_message_c': Returns a message (null-terminated C string)
   !    explaining the exit status.
   !
@@ -300,7 +312,7 @@ contains
        ! Result
        min_x_c, min_f_c, min_g_c, iters_c, evals_c, &
        ! Printing, logging
-       print_control_c, log_function, &
+       print_control_c, log_function, log_function_callback_data, &
        ! Exit status
        status_message_c, status_message_length_c) &
        result(status_c) bind(c)
@@ -309,7 +321,8 @@ contains
 
     ! Signature
     type(c_funptr), intent(in), value :: func, grad, log_function
-    type(c_ptr), intent(in), value :: callback_data
+    type(c_ptr), intent(in), value :: callback_data, &
+         log_function_callback_data
     integer(c_int), intent(in), value :: dim_c, approximation_size_c, &
          print_control_c, status_message_length_c
     real(c_double), intent(in), value :: f_tolerance_c, g_tolerance_c
@@ -327,7 +340,7 @@ contains
     ! Fortran versions of arguments
     procedure(objective_function_c), pointer :: func_pointer
     procedure(objective_gradient_c), pointer :: grad_pointer
-    procedure(log_function_c), pointer :: log_pointer
+    procedure(log_function_c), pointer :: log_function_pointer
     real(dp) :: point(dim_c)
     ! Variables and memory for L-BFGS-B
     integer :: print_control
@@ -351,7 +364,7 @@ contains
     call c_f_procpointer(func, func_pointer)
     call c_f_procpointer(grad, grad_pointer)
     if (c_associated(log_function)) &
-         call c_f_procpointer(log_function, log_pointer)
+         call c_f_procpointer(log_function, log_function_pointer)
     ! Copy initial_point_c to point because point is written to
     point = initial_point_c
     ! Other arrays do not need to be copied because their binary
@@ -423,7 +436,8 @@ contains
              f_delta = abs(real_state(2) - func_value) / &
                   max(abs(real_state(2)), abs(func_value), 1d0)
              ! Log the information
-             status_c = log_pointer( &
+             status_c = log_function_pointer( &
+                  log_function_callback_data, &
                   int_state(30), int_state(36), int_state(34), step_length, &
                   dim_c, point, func_value, grad_value, &
                   f_delta, real_state(3), real_state(13), g_tolerance_c &

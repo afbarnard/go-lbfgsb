@@ -7,6 +7,8 @@
 // this wouldn't be needed as Go can directly call Fortran code that
 // has been exposed to C with bind(c).)
 
+#include <stddef.h>
+
 #include "lbfgsb_go_interface.h"
 #include "lbfgsb_c.h"
 #include "_cgo_export.h"
@@ -27,15 +29,24 @@ int lbfgsb_minimize_c
  double *min_g,
  int *iters,
  int *evals,
+ int fortran_print_control,
+ int do_logging,
+ void *log_function_callback_data,
  char *status_message,
- int status_message_length,
- int print_control
+ int status_message_length
  )
 {
+  // Only pass the logging function if asked
+  lbfgsb_log_function_type log_function_pointer = NULL;
+  if (do_logging) {
+    log_function_pointer = go_log_function_callback;
+  }
+
+  // Call the Fortran code to do the minimization
   return lbfgsb_minimize
     (
-     &go_objective_function_callback,
-     &go_objective_gradient_callback,
+     go_objective_function_callback,
+     go_objective_gradient_callback,
      callback_data,
      dim,
      bounds_control,
@@ -50,8 +61,10 @@ int lbfgsb_minimize_c
      min_g,
      iters,
      evals,
+     fortran_print_control,
+     log_function_pointer,
+     log_function_callback_data,
      status_message,
-     status_message_length,
-     print_control
+     status_message_length
      );
 }

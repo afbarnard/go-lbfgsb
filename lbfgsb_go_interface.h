@@ -23,9 +23,11 @@ int lbfgsb_minimize_c
  double *min_g,
  int *iters,
  int *evals,
+ int fortran_print_control,
+ int do_logging,
+ void *log_function_callback_data,
  char *status_message,
- int status_message_length,
- int print_control
+ int status_message_length
  );
 
 #endif
