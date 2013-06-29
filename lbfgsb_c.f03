@@ -156,11 +156,11 @@ module lbfgsb_c
      ! 'dim': Dimensionality of the optimization space; the size of the
      !    arrays used for points, gradients.
      !
-     ! 'x': Current point in optimization space.
+     ! 'x': Current point in optimization space.  Array of size 'dim'.
      !
      ! 'f': Current objective function value.
      !
-     ! 'g': Current objective function gradient.
+     ! 'g': Current objective function gradient.  Array of size 'dim'.
      !
      ! 'f_delta': Change in objective function value over this
      !    iteration.
