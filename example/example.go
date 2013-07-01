@@ -30,6 +30,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	lbfgsb ".."
 )
@@ -94,6 +96,13 @@ func main() {
 
 	// Minimize sphere function again, but with logging
 	fmt.Printf("----- Sphere Function with Logging -----\n")
+	// Create a logger
+	logger := log.New(os.Stderr, "log: ", log.LstdFlags)
+	// Make a closure for the logging function
+	sphereOptimizer.SetLogger(
+		func(info *lbfgsb.OptimizationIterationInformation) {
+			LogOptimizationIteration(logger, info)
+		})
 	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d, nil)
 	stats = sphereOptimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
@@ -162,4 +171,16 @@ func PrintResults(expectedMin, actualMin lbfgsb.PointValueGradient,
 	fmt.Printf("  status: %v\n", exitStatus)
 	fmt.Printf("   stats: iters: %v; F evals: %v; G evals: %v\n\n",
 		stats.Iterations, stats.FunctionEvaluations, stats.GradientEvaluations)
+}
+
+// Logs an optimization iteration to the given logger
+func LogOptimizationIteration(logger *log.Logger,
+	info *lbfgsb.OptimizationIterationInformation) {
+
+	// Print a header every 10 lines
+	if (info.Iteration-1)%10 == 0 {
+		logger.Println(info.Header())
+	}
+	// Print the information
+	logger.Println(info.String())
 }

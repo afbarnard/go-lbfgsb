@@ -67,6 +67,57 @@ func (gof GeneralObjectiveFunction) EvaluateGradient(point []float64) []float64 
 	return gof.Gradient(point)
 }
 
+// OptimizationIterationLogger is the type of function that
+// logs/records/processes information about a single iteration in an
+// optimization run.
+type OptimizationIterationLogger func(info *OptimizationIterationInformation)
+
+// OptimizationIterationInformation is a container for information about
+// an optimization iteration.
+type OptimizationIterationInformation struct {
+	Iteration   int
+	FEvals      int
+	GEvals      int
+	FEvalsTotal int
+	GEvalsTotal int
+	StepLength  float64
+	X           []float64
+	F           float64
+	G           []float64
+	FDelta      float64
+	FDeltaBound float64
+	GNorm       float64
+	GNormBound  float64
+}
+
+// Header returns a string with descriptions for the fields returned by
+// String().
+func (oii *OptimizationIterationInformation) Header() string {
+	return "iter, f(x), step, df(x) <1?, ||f'(x)|| <1?, #f(), #g()"
+}
+
+// String formats the iteration information fields as a row in a table.
+func (oii *OptimizationIterationInformation) String() string {
+	// Close to convergence for F?
+	fConvRatio := oii.FDelta / oii.FDeltaBound
+	fConvIndicator := "F"
+	if fConvRatio < 1.0 {
+		fConvIndicator = "T"
+	}
+	// Close to convergence for G?
+	gConvRatio := oii.GNorm / oii.GNormBound
+	gConvIndicator := "F"
+	if gConvRatio < 1.0 {
+		gConvIndicator = "T"
+	}
+	// Put all the fields together
+	return fmt.Sprintf("%d %g %g %g %.2g%v %g %.2g%v %d %d",
+		oii.Iteration, oii.F, oii.StepLength,
+		oii.FDelta, fConvRatio, fConvIndicator,
+		oii.GNorm, gConvRatio, gConvIndicator,
+		oii.FEvals, oii.GEvals)
+}
+
 ////////////////////////////////////////
 // Optimization outputs
 

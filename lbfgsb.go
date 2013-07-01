@@ -66,6 +66,9 @@ type Lbfgsb struct {
 	gTolerance        float64
 	printControl      int
 
+	// Logging
+	logger OptimizationIterationLogger
+
 	// Statistics (do not embed or members will be public)
 	statistics OptimizationStatistics
 }
@@ -234,6 +237,16 @@ func (lbfgsb *Lbfgsb) SetFortranPrintControl(verbosity int) *Lbfgsb {
 	return lbfgsb
 }
 
+// SetLogger sets a logging function for the optimization that will be
+// called after each iteration.  May be nil, which disables logging.
+// Defaults to nil.
+func (lbfgsb *Lbfgsb) SetLogger(
+	logger OptimizationIterationLogger) *Lbfgsb {
+
+	lbfgsb.logger = logger
+	return lbfgsb
+}
+
 // Minimize optimizes the given objective using the L-BFGS-B algorithm.
 // Implements OptimizationFunctionMinimizer.Minimize.
 func (lbfgsb *Lbfgsb) Minimize(
@@ -327,11 +340,16 @@ func (lbfgsb *Lbfgsb) Minimize(
 	lowerBounds := makeCCopySlice_Float(lbfgsb.lowerBounds, dim)
 	upperBounds := makeCCopySlice_Float(lbfgsb.upperBounds, dim)
 
-	// Set up callbacks
-	callbackData := &callbackData{objective: objective}
-	callbackData_c := unsafe.Pointer(callbackData)
-	doLogging_c := C.int(0)  // TODO
-	logFunctionCallbackData_c := unsafe.Pointer(uintptr(0))  // TODO
+	// Set up callbacks for function, gradient, and logging
+	callbackData_c := unsafe.Pointer(
+		&callbackData{objective: objective})
+	var doLogging_c C.int                        // false
+	var logFunctionCallbackData_c unsafe.Pointer // null
+	if lbfgsb.logger != nil {
+		doLogging_c = C.int(1) // true
+		logFunctionCallbackData_c = unsafe.Pointer(
+			&logCallbackData{logger: lbfgsb.logger})
+	}
 
 	// Allocate arrays for return value
 	minimum.X = make([]float64, dim)
@@ -416,6 +434,15 @@ type callbackData struct {
 	objective FunctionWithGradient
 }
 
+// logCallbackData is a container for the logging function.  It might be
+// tempting to just use a function pointer instead of this container,
+// but passing a function pointer to void* in C possibly truncates the
+// address because void* is for data pointers only and function pointers
+// may be wider.
+type logCallbackData struct {
+	logger OptimizationIterationLogger
+}
+
 // go_objective_function_callback is an adapter between the C callback
 // and the Go callback for evaluating the objective function.  Exported
 // to C for use as a function pointer.  Must match the signature of
@@ -486,13 +513,41 @@ func go_objective_gradient_callback(
 //
 //export go_log_function_callback
 func go_log_function_callback(
-	logCallBackData_c unsafe.Pointer,
+	logCallbackData_c unsafe.Pointer,
 	iteration_c, fgEvals_c, fgEvalsTotal_c C.int, stepLength_c C.double,
-	dim_c C.int, x *C.double, f C.double, g *C.double,
-	fDelta, fDeltaBound, gNorm, gNormBound C.double) (
+	dim_c C.int, x_c *C.double, f_c C.double, g_c *C.double,
+	fDelta_c, fDeltaBound_c, gNorm_c, gNormBound_c C.double) (
 		statusCode_c C.int) {
 
-	// TODO go_log_function_callback
+	var x, g []float64
+
+	// Convert inputs
+	dim := int(dim_c)
+	wrapCArrayAsGoSlice_Float64(x_c, dim, &x)
+	wrapCArrayAsGoSlice_Float64(g_c, dim, &g)
+
+	// Get the logging function from the callback data
+	cbData := (*logCallbackData)(logCallbackData_c)
+
+	// Call the logging function
+	// TODO handle panics
+	cbData.logger(
+		&OptimizationIterationInformation{
+			Iteration:   int(iteration_c),
+			FEvals:      int(fgEvals_c),
+			GEvals:      int(fgEvals_c),
+			FEvalsTotal: int(fgEvalsTotal_c),
+			GEvalsTotal: int(fgEvalsTotal_c),
+			StepLength:  float64(stepLength_c),
+			X:           x,
+			F:           float64(f_c),
+			G:           g,
+			FDelta:      float64(fDelta_c),
+			FDeltaBound: float64(fDeltaBound_c),
+			GNorm:       float64(gNorm_c),
+			GNormBound:  float64(gNormBound_c),
+		})
+
 	return
 }
 
