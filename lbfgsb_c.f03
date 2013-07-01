@@ -340,7 +340,6 @@ contains
     ! Fortran versions of arguments
     procedure(objective_function_c), pointer :: func_pointer
     procedure(objective_gradient_c), pointer :: grad_pointer
-    procedure(log_function_c), pointer :: log_function_pointer
     real(dp) :: point(dim_c)
     ! Variables and memory for L-BFGS-B
     integer :: print_control
@@ -357,8 +356,6 @@ contains
          2 * approximation_size_c * dim_c + 5 * dim_c + &
          11 * approximation_size_c ** 2 + 8 * approximation_size_c &
          )
-    ! Other locals
-    real(dp) :: step_length, f_delta
 
     !print *, 'lbfgsb_c.f03:lbfgsb_minimize('
     !print *, '  func:', c_associated(func)
@@ -387,8 +384,6 @@ contains
     ! Convert inputs from C types to Fortran types
     call c_f_procpointer(func, func_pointer)
     call c_f_procpointer(grad, grad_pointer)
-    if (c_associated(log_function)) &
-         call c_f_procpointer(log_function, log_function_pointer)
     ! Copy initial_point_c to point because point is written to
     point = initial_point_c
     ! Other arrays do not need to be copied because their binary
@@ -461,22 +456,13 @@ contains
        case ('WARNING')
           ! TODO handle warnings
        case ('NEW_X')
-          ! Call the logging function if one was given
-          if (c_associated(log_function)) then
-             ! Compute some of the values not otherwise available
-             step_length = real_state(4) * real_state(14)
-             f_delta = abs(real_state(2) - func_value) / &
-                  max(abs(real_state(2)), abs(func_value), 1d0)
-             ! Log the information
-             status_c = log_function_pointer( &
-                  log_function_callback_data, &
-                  int_state(30), int_state(36), int_state(34), step_length, &
-                  dim_c, point, func_value, grad_value, &
-                  f_delta, real_state(3), real_state(13), g_tolerance_c &
-                  )
-             ! Terminate optimization on any error
-             if (status_c /= LBFGSB_STATUS_SUCCESS) exit
-          end if
+          ! Call the logging function
+          status_c = call_logging_function( &
+               log_function, log_function_callback_data, &
+               point, func_value, grad_value, g_tolerance_c, &
+               int_state, real_state, status_message_c)
+          ! Terminate optimization on any error
+          if (status_c /= LBFGSB_STATUS_SUCCESS) exit
        end select
     end do
     ! End optimization
@@ -520,10 +506,10 @@ contains
        ! Copy task message into status message
        call convert_f_c_string(message, status_message_c, status_message_length_c)
     else
-       ! There was a problem computing the objective or the gradient.
-       ! The error message and code were already properly set by the
-       ! call to function/gradient.  Fill C types with zeros so callers
-       ! do not act unwittingly on garbage.
+       ! There was a problem computing the objective or the gradient or
+       ! calling the logging function.  The error message and code were
+       ! already properly set.  Fill C types with zeros so callers do
+       ! not act unwittingly on garbage.
        min_x_c = 0d0
        min_f_c = 0d0
        min_g_c = 0d0
@@ -623,6 +609,51 @@ contains
     ! 'STOP'
     ! 'CPU'
   end subroutine interpret_task
+
+  ! Calls the given C logging function (if it is not null) with
+  ! information about the current iteration derived from the other
+  ! arguments.
+  function call_logging_function( &
+       log_function_pointer_c, log_function_callback_data, &
+       x, f, g, g_tolerance, &
+       int_state, real_state, status_message_c) result(status_c)
+    implicit none
+    ! Signature
+    type(c_funptr), intent(in), value :: log_function_pointer_c
+    type(c_ptr), intent(in), value :: log_function_callback_data
+    integer, intent(in) :: int_state(int_state_size)
+    real(dp), intent(in) :: x(:), f, g(:), g_tolerance, &
+         real_state(real_state_size)
+    character(c_char), intent(out) :: status_message_c(:)
+    integer(c_int) :: status_c
+    ! Locals
+    procedure(log_function_c), pointer :: log_function_pointer
+    real(dp) :: step_length, f_delta
+
+    ! Call the logging function if one was given
+    if (c_associated(log_function_pointer_c)) then
+       ! Convert C function pointer to Fortran function pointer
+       call c_f_procpointer(log_function_pointer_c, &
+            log_function_pointer)
+       ! Compute some of the values not otherwise available
+       step_length = real_state(4) * real_state(14)
+       f_delta = abs(real_state(2) - f) / &
+            max(abs(real_state(2)), abs(f), 1d0)
+       ! Log the information
+       status_c = log_function_pointer( &
+            log_function_callback_data, &
+            int_state(30), int_state(36), int_state(34), step_length, &
+            size(x), x, f, g, &
+            f_delta, real_state(3), real_state(13), g_tolerance &
+            )
+       ! Return a message for the status if necessary
+       if (status_c /= LBFGSB_STATUS_SUCCESS) then
+          call convert_f_c_string('Error: Logging function failed', &
+               status_message_c, size(status_message_c))
+       end if
+       return
+    end if
+  end function call_logging_function
 
   ! Converts Fortran strings to C strings ensuring length bounds, null
   ! chars, and all that.
