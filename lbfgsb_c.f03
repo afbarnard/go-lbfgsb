@@ -504,7 +504,7 @@ contains
        end select
 
        ! Copy task message into status message
-       call convert_f_c_string(message, status_message_c, status_message_length_c)
+       call convert_f_c_string(message, status_message_c)
     else
        ! There was a problem computing the objective or the gradient or
        ! calling the logging function.  The error message and code were
@@ -649,7 +649,7 @@ contains
        ! Return a message for the status if necessary
        if (status_c /= LBFGSB_STATUS_SUCCESS) then
           call convert_f_c_string('Error: Logging function failed', &
-               status_message_c, size(status_message_c))
+               status_message_c)
        end if
        return
     end if
@@ -657,25 +657,24 @@ contains
 
   ! Converts Fortran strings to C strings ensuring length bounds, null
   ! chars, and all that.
-  subroutine convert_f_c_string(string_f, string_c, string_c_length)
+  subroutine convert_f_c_string(string_f, string_c)
     implicit none
     ! Signature
     character(len=*), intent(in) :: string_f
-    integer(c_int), intent(in) :: string_c_length
-    character(c_char), intent(out) :: string_c(string_c_length)
+    character(c_char), intent(out) :: string_c(:)
     ! Locals
     integer :: length, i
 
     ! Find the length of the shorter string.  Leave room for a
     ! terminating null character.
-    length = min(len_trim(string_f), string_c_length - 1)
+    length = min(len_trim(string_f), size(string_c) - 1)
     ! Copy 'length' characters from the Fortran string to the C
     ! character array.  A string must be converted explicitly to an
     ! array in Fortran as array assignment broadcasts the string
     ! (technically a scalar) to each element of the array.
     forall(i = 1:length) string_c(i) = string_f(i:i)
     ! Fill rest of string (at least one character) with nulls
-    string_c(length+1:string_c_length) = c_null_char
+    string_c(length+1:size(string_c)) = c_null_char
   end subroutine convert_f_c_string
 
 end module lbfgsb_c
