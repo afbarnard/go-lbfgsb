@@ -403,7 +403,6 @@ contains
     ! Translate print_control_c which is a zero-based version of
     ! print_control (which is possibly negative)
     print_control = print_control_c - 1
-    ! TODO consider debug vs. print_control and what about logging? (could log via a callback)
 
     ! Initialize the state and task
     state = 'START'

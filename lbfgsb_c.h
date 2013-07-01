@@ -6,7 +6,16 @@
 #ifndef __LBFGSB_C_H__
 #define __LBFGSB_C_H__
 
-// TODO declare constants enumerated in Fortran code
+// Status codes for exit statuses of L-BFGS-B and related code.  See the
+// documentation in the Fortran module.
+enum lbfgsb_status {
+  LBFGSB_STATUS_SUCCESS = 0,
+  LBFGSB_STATUS_APPROXIMATE,
+  LBFGSB_STATUS_WARNING,
+  LBFGSB_STATUS_FAILURE,
+  LBFGSB_STATUS_USAGE_ERROR,
+  LBFGSB_STATUS_INTERNAL_ERROR
+};
 
 // Signature of objective function callback.  Matches 'function
 // objective_function_c', explained in Fortran module.
