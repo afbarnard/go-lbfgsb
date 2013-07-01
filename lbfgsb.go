@@ -462,8 +462,8 @@ func go_objective_function_callback(
 	wrapCArrayAsGoSlice_Float64(point_c, dim, &point)
 	cbData := (*callbackData)(callbackData_c)
 
-	// Evaluate the objective function
-	// TODO handle panics
+	// Evaluate the objective function.  Let panics propagate through
+	// C/Fortran.
 	value := cbData.objective.Evaluate(point)
 
 	// Convert outputs
@@ -493,8 +493,8 @@ func go_objective_gradient_callback(
 	wrapCArrayAsGoSlice_Float64(point_c, dim, &point)
 	cbData := (*callbackData)(callbackData_c)
 
-	// Evaluate the gradient of the objective function
-	// TODO handle panics
+	// Evaluate the gradient of the objective function.  Let panics
+	// propagate through C/Fortran.
 	gradRet = cbData.objective.EvaluateGradient(point)
 
 	// Convert outputs
@@ -529,8 +529,8 @@ func go_log_function_callback(
 	// Get the logging function from the callback data
 	cbData := (*logCallbackData)(logCallbackData_c)
 
-	// Call the logging function
-	// TODO handle panics
+	// Call the logging function.  Let panics propagate through
+	// C/Fortran.
 	cbData.logger(
 		&OptimizationIterationInformation{
 			Iteration:   int(iteration_c),
