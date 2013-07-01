@@ -37,10 +37,13 @@ import (
 func main() {
 	fmt.Printf("----- Go L-BFGS-B Example Program -----\n\n")
 
+	////////////////////////////////////////
+	// Example 1: Basic usage
+
 	// Create default L-BFGS-B optimizer.  The solver adapts to any
 	// initial dimensionality but then must stick with that
 	// dimensionality.
-	optimizer := new(lbfgsb.Lbfgsb)
+	sphereOptimizer := new(lbfgsb.Lbfgsb)
 
 	// Create sphere objective function as FunctionWithGradient object
 	sphereObjective := new(SphereFunction)
@@ -50,16 +53,19 @@ func main() {
 		G: []float64{0.0, 0.0, 0.0, 0.0, 0.0},
 	}
 
-	// Minimize sphere function without additional parameters
+	// Minimize sphere function
 	fmt.Printf("----- Sphere Function -----\n")
-	x0 := []float64{10.0, 10.0, 10.0, 10.0, 10.0}
-	minimum, exitStatus := optimizer.Minimize(sphereObjective, x0, nil)
-	stats := optimizer.OptimizationStatistics()
+	x0_5d := []float64{10.0, -9.0, 8.0, -7.0, 6.0}
+	minimum, exitStatus := sphereOptimizer.Minimize(sphereObjective, x0_5d, nil)
+	stats := sphereOptimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
+
+	////////////////////////////////////////
+	// Example 2: Setting parameters
 
 	// Create a new solver for a new problem with a different
 	// dimensionality.  Make the tolerances strict.
-	optimizer = lbfgsb.NewLbfgsb(2).
+	rosenOptimizer := lbfgsb.NewLbfgsb(2).
 		SetFTolerance(1e-10).SetGTolerance(1e-10)
 
 	// Create Rosenbrock objective function by composing individual
@@ -74,14 +80,23 @@ func main() {
 		G: []float64{0.0, 0.0},
 	}
 
-	// Minimize Rosenbrock without additional parameters
+	// Minimize Rosenbrock
 	fmt.Printf("----- Rosenbrock Function -----\n")
-	x0 = []float64{10.0, 10.0}
-	minimum, exitStatus = optimizer.Minimize(rosenObjective, x0, nil)
-	stats = optimizer.OptimizationStatistics()
+	x0_2d := []float64{10.0, 11.0}
+	minimum, exitStatus = rosenOptimizer.Minimize(rosenObjective, x0_2d, nil)
+	stats = rosenOptimizer.OptimizationStatistics()
 	PrintResults(rosenMin, minimum, exitStatus, stats)
 
 	// TODO example with bounds
+
+	////////////////////////////////////////
+	// Example 4: Logging
+
+	// Minimize sphere function again, but with logging
+	fmt.Printf("----- Sphere Function with Logging -----\n")
+	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d, nil)
+	stats = sphereOptimizer.OptimizationStatistics()
+	PrintResults(sphereMin, minimum, exitStatus, stats)
 
 	// TODO example with user errors
 

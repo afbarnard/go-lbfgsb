@@ -360,6 +360,30 @@ contains
     ! Other locals
     real(dp) :: step_length, f_delta
 
+    !print *, 'lbfgsb_c.f03:lbfgsb_minimize('
+    !print *, '  func:', c_associated(func)
+    !print *, '  grad:', c_associated(grad)
+    !print *, '  callback_data:', c_associated(callback_data)
+    !print *, '  dim_c:', dim_c
+    !print *, '  bounds_control_c:', bounds_control_c
+    !print *, '  lower_bounds_c:', lower_bounds_c
+    !print *, '  upper_bounds_c:', upper_bounds_c
+    !print *, '  approximation_size_c:', approximation_size_c
+    !print *, '  f_tolerance_c:', f_tolerance_c
+    !print *, '  g_tolerance_c:', g_tolerance_c
+    !print *, '  initial_point_c:', initial_point_c
+    !print *, '  min_x_c:', min_x_c
+    !print *, '  min_f_c:', min_f_c
+    !print *, '  min_g_c:', min_g_c
+    !print *, '  iters_c:', iters_c
+    !print *, '  evals_c:', evals_c
+    !print *, '  print_control_c:', print_control_c
+    !print *, '  log_function:', c_associated(log_function)
+    !print *, '  log_function_callback_data:', c_associated(log_function_callback_data)
+    !print *, '  status_message_c:', status_message_c
+    !print *, '  status_message_length_c:', status_message_length_c
+    !print *, ')'
+
     ! Convert inputs from C types to Fortran types
     call c_f_procpointer(func, func_pointer)
     call c_f_procpointer(grad, grad_pointer)
@@ -390,6 +414,9 @@ contains
     state = 'START'
     task = state
 
+    !print *, 'point:', point
+    !print *, 'task:', task
+
     ! Loop to do tasks and coordinate the optimization
     do while ( &
          state == 'EVAL_FG' .or. &
@@ -406,6 +433,9 @@ contains
             task, print_control, &
             char_state, bool_state, int_state, real_state)
 
+       !print *, 'point:', point
+       !print *, 'task:', task
+
        ! Interpret the returned task
        call interpret_task(task, state, message)
 
@@ -420,12 +450,14 @@ contains
                callback_data, status_message_c, status_message_length_c)
           ! Terminate optimization on any error
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
+          !print *, 'f:', func_value
 
           ! Call objective function gradient
           status_c = grad_pointer(dim_c, point, grad_value, &
                callback_data, status_message_c, status_message_length_c)
           ! Terminate optimization on any error
           if (status_c /= LBFGSB_STATUS_SUCCESS) exit
+          !print *, 'g:', grad_value
        case ('WARNING')
           ! TODO handle warnings
        case ('NEW_X')

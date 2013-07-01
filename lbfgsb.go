@@ -320,12 +320,12 @@ func (lbfgsb *Lbfgsb) Minimize(
 			}
 		}
 	}
-	if lbfgsb.lowerBounds == nil {
-		lbfgsb.lowerBounds = make([]float64, dim)
-	}
-	if lbfgsb.upperBounds == nil {
-		lbfgsb.upperBounds = make([]float64, dim)
-	}
+
+	// Set up lower and upper bounds.  These must be different slices
+	// than the ones in the Lbfgsb object because those must remain
+	// unallocated if no bounds are specified.
+	lowerBounds := makeCCopySlice_Float(lbfgsb.lowerBounds, dim)
+	upperBounds := makeCCopySlice_Float(lbfgsb.upperBounds, dim)
 
 	// Set up callbacks
 	callbackData := &callbackData{objective: objective}
@@ -350,8 +350,8 @@ func (lbfgsb *Lbfgsb) Minimize(
 	// (One could always allocate slices of C types, pass those, and
 	// then copy out and convert the contents on return.)
 	var boundsControl_c *C.int = &boundsControl[0]
-	var lowerBounds_c *C.double = (*C.double)(&lbfgsb.lowerBounds[0])
-	var upperBounds_c *C.double = (*C.double)(&lbfgsb.upperBounds[0])
+	var lowerBounds_c *C.double = &lowerBounds[0]
+	var upperBounds_c *C.double = &upperBounds[0]
 	var x0_c *C.double = (*C.double)(&initialPoint[0])
 	var minX_c *C.double = (*C.double)(&minimum.X[0])
 	var minF_c *C.double = (*C.double)(&minimum.F)
@@ -385,6 +385,21 @@ func (lbfgsb *Lbfgsb) Minimize(
 	// Number of function and gradient evaluations is always the same
 	lbfgsb.statistics.GradientEvaluations = lbfgsb.statistics.FunctionEvaluations
 
+	return
+}
+
+// makeCCopySlice_Float creates a C copy of a Go slice.  If the Go slice
+// is nil, then a slice of the given length is created.
+func makeCCopySlice_Float(slice []float64, sliceLen int) (
+	slice_c []C.double) {
+
+	slice_c = make([]C.double, sliceLen)
+	// Copy the Go slice to the C slice, converting elements
+	if slice != nil {
+		for i := 0; i < sliceLen; i++ {
+			slice_c[i] = C.double(slice[i])
+		}
+	}
 	return
 }
 
@@ -427,6 +442,8 @@ func go_objective_function_callback(
 	// Convert outputs
 	*value_c = C.double(value)
 
+	//fmt.Printf("go_objective_function_callback: %v; %v;\n", point, value)
+
 	return
 }
 
@@ -456,6 +473,8 @@ func go_objective_gradient_callback(
 	// Convert outputs
 	wrapCArrayAsGoSlice_Float64(gradient_c, dim, &gradient)
 	copy(gradient, gradRet)
+
+	//fmt.Printf("go_objective_gradient_callback: %v; %v;\n", point, gradient)
 
 	return
 }
