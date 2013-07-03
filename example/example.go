@@ -46,6 +46,7 @@ import (
 	// allows this example program to use this package directly in its
 	// workspace without installing anything.
 	lbfgsb "github.com/afbarnard/go-lbfgsb"
+	//lbfgsb ".."
 )
 
 func main() {
@@ -70,7 +71,7 @@ func main() {
 	// Minimize sphere function
 	fmt.Printf("----- Sphere Function -----\n")
 	x0_5d := []float64{10.0, -9.0, 8.0, -7.0, 6.0}
-	minimum, exitStatus := sphereOptimizer.Minimize(sphereObjective, x0_5d, nil)
+	minimum, exitStatus := sphereOptimizer.Minimize(sphereObjective, x0_5d)
 	stats := sphereOptimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
 
@@ -97,7 +98,7 @@ func main() {
 	// Minimize Rosenbrock
 	fmt.Printf("----- Rosenbrock Function -----\n")
 	x0_2d := []float64{10.0, 11.0}
-	minimum, exitStatus = rosenOptimizer.Minimize(rosenObjective, x0_2d, nil)
+	minimum, exitStatus = rosenOptimizer.Minimize(rosenObjective, x0_2d)
 	stats = rosenOptimizer.OptimizationStatistics()
 	PrintResults(rosenMin, minimum, exitStatus, stats)
 
@@ -115,7 +116,7 @@ func main() {
 		func(info *lbfgsb.OptimizationIterationInformation) {
 			LogOptimizationIteration(logger, info)
 		})
-	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d, nil)
+	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d)
 	stats = sphereOptimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
 

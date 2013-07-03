@@ -251,15 +251,12 @@ func (lbfgsb *Lbfgsb) SetLogger(
 // Implements OptimizationFunctionMinimizer.Minimize.
 func (lbfgsb *Lbfgsb) Minimize(
 	objective FunctionWithGradient,
-	initialPoint []float64,
-	parameters map[string]interface{}) (
+	initialPoint []float64) (
 		minimum PointValueGradient,
 		exitStatus ExitStatus) {
 
 	// Make sure object has been initialized
 	lbfgsb.Init(len(initialPoint))
-
-	// TODO OMG! split this out into some helper functions
 
 	// Check dimensionality
 	dim := len(initialPoint)
@@ -268,52 +265,6 @@ func (lbfgsb *Lbfgsb) Minimize(
 		exitStatus.Code = USAGE_ERROR
 		exitStatus.Message = fmt.Sprintf("Lbfgsb: Dimensionality of the initial point (%d) does not match the dimensionality of the solver (%d).", dim, lbfgsb.dimensionality)
 		return
-	}
-
-	// Process the parameters.  Argument 'parameters' overrides but does
-	// not replace class-level parameters.  The bounds are not part of
-	// the parameters, they are part of the problem specification.
-	var paramVal interface{}
-	var ok bool
-	// Approximation size
-	approximationSize := lbfgsb.approximationSize
-	if paramVal, ok = parameters["approximationSize"]; ok {
-		approximationSize, ok = paramVal.(int)
-		if !ok || approximationSize <= 0 {
-			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: approximationSize: %v.  Expected integer >= 1.", paramVal)
-			return
-		}
-	}
-	// F tolerance
-	fTolerance := lbfgsb.fTolerance
-	if paramVal, ok = parameters["fTolerance"]; ok {
-		fTolerance, ok = paramVal.(float64)
-		if !ok || fTolerance <= 0.0 {
-			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: fTolerance: %v.  Expected float >= 0.", paramVal)
-			return
-		}
-	}
-	// G tolerance
-	gTolerance := lbfgsb.gTolerance
-	if paramVal, ok = parameters["gTolerance"]; ok {
-		gTolerance, ok = paramVal.(float64)
-		if !ok || gTolerance <= 0.0 {
-			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: gTolerance: %v.  Expected float >= 0.", paramVal)
-			return
-		}
-	}
-	// Debug level
-	printControl := lbfgsb.printControl
-	if paramVal, ok = parameters["printControl"]; ok {
-		printControl, ok = paramVal.(int)
-		if !ok || printControl < 0 {
-			exitStatus.Code = USAGE_ERROR
-			exitStatus.Message = fmt.Sprintf("Bad parameter value: printControl: %v.  Expected integer >= 0.", paramVal)
-			return
-		}
 	}
 
 	// Set up bounds control.  Use a C-compatible type.
@@ -356,10 +307,10 @@ func (lbfgsb *Lbfgsb) Minimize(
 	minimum.G = make([]float64, dim)
 
 	// Convert parameters for C
-	approximationSize_c := C.int(approximationSize)
-	fTolerance_c := C.double(fTolerance)
-	gTolerance_c := C.double(gTolerance)
-	printControl_c := C.int(printControl)
+	approximationSize_c := C.int(lbfgsb.approximationSize)
+	fTolerance_c := C.double(lbfgsb.fTolerance)
+	gTolerance_c := C.double(lbfgsb.gTolerance)
+	printControl_c := C.int(lbfgsb.printControl)
 
 	// Prepare buffers and arrays for C.  Avoid allocation in C land by
 	// allocating compatible things in Go and passing their addresses.

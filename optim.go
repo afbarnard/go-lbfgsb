@@ -24,18 +24,8 @@ type ObjectiveFunctionMinimizer interface {
 	// objective function starting from the given point.  Returns the
 	// minimum (or the best point found) and the status of the algorithm
 	// at exit.
-	//
-	// 'parameters' is a map containing parameters for the optimization
-	// algorithm.  The parameters are optional and may be nil.  If
-	// specified, the parameters override any previously-set parameters,
-	// but only for the duration of this invocation.  Parameters whose
-	// names appear exactly as keys in the map will be interpreted.  The
-	// interpretation may fail if the given value cannot be converted to
-	// a valid parameter value.  Any other contents of the parameter map
-	// will be ignored.
-	Minimize(objective FunctionWithGradient, initialPoint []float64,
-		parameters map[string]interface{}) (
-			minimum PointValueGradient, exitStatus ExitStatus)
+	Minimize(objective FunctionWithGradient, initialPoint []float64) (
+		minimum PointValueGradient, exitStatus ExitStatus)
 }
 
 ////////////////////////////////////////
