@@ -7,13 +7,15 @@
 // TODO example program for Fortran
 // TODO example program for C
 
-// TODO fix these build instructions
-// Build by running the following two commands:
+// Install go-lbfgsb and build by running the following commands from
+// this directory:
 //
+//     $ go get -d github.com/afbarnard/go-lbfgsb
+//     $ pushd ~/go-pkgs/src/github.com/afbarnard/go-lbfgsb
+//     $ make
+//     $ popd
 //     $ go get github.com/afbarnard/go-lbfgsb
 //     $ go build
-//
-// The 'go get' command only needs to be run once.
 //
 // Then run.  Fun!
 //
@@ -26,6 +28,9 @@
 // You will have to remove the sources and extraneous directories
 // yourself.  Unfortunately 'go clean' does not appear to be that
 // sophisticated yet.
+//
+//     $ rm -R ~/go-pkgs/src/github.com/afbarnard/go-lbfgsb
+//     $ find ~/go-pkgs -type d -empty -not -path '*/.*' -delete
 package main
 
 import (
@@ -33,6 +38,13 @@ import (
 	"log"
 	"os"
 
+	// Import go-lbfgsb as a "third-party" package (since it was
+	// installed with 'go get').  Import as a local package if go-lbfgsb
+	// was installed into your workspace.  For example, if you put the
+	// code for this package in 'optim/go-lbfgsb', then 'import lbfgsb
+	// "optim/go-lbfgsb"'.  Changing the import to 'import lbfgsb ".."'
+	// allows this example program to use this package directly in its
+	// workspace without installing anything.
 	lbfgsb "github.com/afbarnard/go-lbfgsb"
 )
 

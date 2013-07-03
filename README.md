@@ -54,10 +54,20 @@ useful, stable, released package pretty quickly.
 * Bounds constraints allow typical, simple inequality (box) constraints
   on individual variables without needing a more specialized algorithm.
 
-* Modern (Fortran 2003) API for original FORTRAN 77 optimizer.
-
 * Incorporates recent improvements and corrections to L-BFGS-B
   algorithm.  (Uses L-BFGS-B version 3.0 from March, 2011.)
+
+* Customizable logging.
+
+
+Future Features
+---------------
+
+* Modern (Fortran 2003) API for original FORTRAN 77 optimizer.
+
+* C API for original FORTRAN 77 optimizer.
+
+* Customizable termination conditions.
 
 
 Go-Fortran Interface
@@ -84,49 +94,89 @@ Building this software requires:
 * Fortran 2003 compiler with support for procedure pointers, such as GCC
   4.4.6 or later (gfortran)
 
-* Go 1.0
+* Go 1.0 or later
+
+* Standard development tools: make, ar, ld.
 
 
-Build
------
+Download, Build, Install
+------------------------
 
-1. Download this package into the Go workspace for the Go program that
-   will use it.  Treat this package just as if it was part of your Go
-   code in terms of where you want to put it and how it will build.  For
-   example, you could place it in the directory
-   `~/go-dev/src/proj1/optim/go-lbfgsb` if you were working on `proj1`.
+Conveniently, you can use the Go tools to download, build, and install
+this package, but it is not quite fully automatic: there is an
+intervening step to compile the Fortran code.
 
-2. Build the Fortran code into a library.  Change to the directory where
-   you placed this package and run `make`.
+1. Download.  Using `go get` requires `git`.  If you want to download
+   the latest code after having downloaded this package previously, add
+   the update flag (`-u`) to the command.
 
    ```shell
-   $ cd ~/go-dev/src/proj1/optim/go-lbfgsb
-   $ make
+   [go-wrkspc]$ go get -d github.com/afbarnard/go-lbfgsb
    ```
 
-   This builds a static library, `liblbfgsb.a`, that will be linked into
-   your Go program.
+2. Build Fortran.  Change to the directory containing the downloaded
+   package and run make.  The workspace that Go uses to download and
+   install packages is the first workspace in your GOPATH, or the Go
+   installation directory if GOPATH is empty.
 
-3. Import the `go-lbfgsb` module into your program as if it was any
-   other "local" package that is part of your code.  Build your Go
-   program normally.
+   ```shell
+   [go-wrkspc]$ echo $GOPATH
+   /home/go-pkgs:/home/go-wrkspc
+   [go-wrkspc]$ cd ~/go-pkgs/src/github.com/afbarnard/go-lbfgsb
+   [go-lbfgsb]$ make
+   [go-lbfgsb]$ cd ~/go-wrkspc
+   ```
+
+3. Build, install Go.  Run `go get` again to complete the Go
+   installation.
+
+   ```shell
+   [go-wrkspc]$ go get github.com/afbarnard/go-lbfgsb
+   ```
+
+4. Use.  Import the `go-lbfgsb` package into your Go program.  Build
+   your program normally.
 
    ```go
-   import lbfgsb "proj1/optim/go-lbfgsb"
+   import lbfgsb "github.com/afbarnard/go-lbfgsb"
    ```
 
    ```shell
-   $ go build
+   [main-prog]$ go build
    ```
 
-Repeat step 3 as needed.  Steps 1 and 2 do not need to be repeated
-unless you want to update the package.
 
-For your convenience, I hope to find a way to have `go get` download and
-build this package.  Since the Go/Cgo build system does not support
-foreign language files, one would still have to run `make`, but
-otherwise you could treat this package as any other third-party package
-and not have to "integrate" it with your program.
+Alternative Download, Install, Build
+------------------------------------
+
+If you do not want to use `go get`, you can download this package
+manually and make it part of your Go workspace.
+
+1. Download.  Get a project release archive from GitHub.
+
+2. Install.  Extract the release archive into your Go workspace.
+
+   ```shell
+   [go-wrkspc]$ tar -zxf ~/downloads/go-lbfsgb-1.2.3.tar.gz --directory optim
+   ```
+
+3. Build.  Run make in the package directory.
+
+   ```shell
+   [go-wrkspc]$ cd optim/go-lbfgsb-1.2.3
+   [go-lbfgsb-1.2.3]$ make
+   [go-lbfgsb-1.2.3]$ cd ~/go-wrkspc
+   ```
+
+4. Use.  Import the package as a local package and build normally.
+
+   ```go
+   import lbfgsb "optim/go-lbfgsb-1.2.3"
+   ```
+
+   ```shell
+   [main-prog]$ go build
+   ```
 
 
 Contact
