@@ -629,6 +629,9 @@ contains
     procedure(log_function_c), pointer :: log_function_pointer
     real(dp) :: step_length, f_delta
 
+    ! Default to success
+    status_c = LBFGSB_STATUS_SUCCESS
+
     ! Call the logging function if one was given
     if (c_associated(log_function_pointer_c)) then
        ! Convert C function pointer to Fortran function pointer
