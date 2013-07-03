@@ -11,4 +11,5 @@ build
 
 # Programs, libraries
 liblbfgsb.a
+lbfgsb.syso
 example/example

@@ -33,7 +33,7 @@ import (
 	"log"
 	"os"
 
-	lbfgsb ".."
+	lbfgsb "github.com/afbarnard/go-lbfgsb"
 )
 
 func main() {

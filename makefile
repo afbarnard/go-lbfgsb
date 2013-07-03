@@ -8,7 +8,8 @@
 
 # Configuration and options
 
-# Compiler (I'm only worrying about GCC for now since it supports Fortran, C, and Go.)
+# Compiler (I'm only worrying about GCC for now since it supports
+# Fortran, C, and Go.)
 compiler := gcc
 # General compiler options, e.g. -O -g
 compile_options := -g
@@ -20,7 +21,7 @@ compile_options_fortran := -fimplicit-none
 # Compilation
 
 # Build the library by default
-all: liblbfgsb.a
+all: liblbfgsb.a lbfgsb.syso
 
 # FORTRAN 77 compilation.  The original L-BFGS-B makefile adds bounds
 # checking code with '-fbounds-check', so do that here in case it's
@@ -46,12 +47,24 @@ lbfgsb_c.o: lbfgsb.o
 
 # Libraries and executables
 
+# Object files needed for the libraries
+libObjs := lbfgsb_c.o lbfgsb.o lbfgsb/lbfgsb.o lbfgsb/blas.o lbfgsb/linpack.o lbfgsb/timer.o
+
 # Library
-liblbfgsb.a: lbfgsb_c.o lbfgsb.o lbfgsb/lbfgsb.o lbfgsb/blas.o lbfgsb/linpack.o lbfgsb/timer.o
+liblbfgsb.a: $(libObjs)
 	ar cr $@ $^
+
+# Build a "library" for Go, a combined object with the same contents as
+# the static library.  Go can link in this type of object automatically,
+# because it's the same type of object as results from a single C
+# compile.  In other words, it is as if all the individual object files
+# were concatenated: 'cat $^ > $@'.  This is called partial link or
+# incremental linking.
+lbfgsb.syso: $(libObjs)
+	ld --relocatable $^ -o $@
 
 # Commands
 
 # Delete derived
 clean:
-	@rm -f *.o *.mod *~ lbfgsb/*.o liblbfgsb.a
+	@rm -f *.o *.mod *~ lbfgsb/*.o liblbfgsb.a lbfgsb.syso
