@@ -42,10 +42,10 @@ incorporate it rather than re-license it.
 Features
 --------
 
-Go L-BFGS-B is version 0.0.1.
+Go L-BFGS-B is version 0.1.0.
 
-This software is in the early development stages, but should have a
-useful, stable, released package pretty quickly.
+This software is young, but has already been useful and reliable in a
+machine learning application.
 
 * Simple API allowing Go programs to easily do efficient, accurate
   optimization.  You only need to provide functions (or an object) that
