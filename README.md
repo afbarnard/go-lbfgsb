@@ -104,11 +104,13 @@ Download, Build, Install
 
 Conveniently, you can use the Go tools to download, build, and install
 this package, but it is not quite fully automatic: there is an
-intervening step to compile the Fortran code.
+intervening step to compile the Fortran code.  This is needed because
+the Go compilers do not know Fortran.
 
 1. Download.  Using `go get` requires `git`.  If you want to download
    the latest code after having downloaded this package previously, add
-   the update flag (`-u`) to the command.
+   the update flag (`-u`) to the command.  The `-d` flag tells Go to
+   only download the code and not build or install the package.
 
    ```shell
    [go-wrkspc]$ go get -d github.com/afbarnard/go-lbfgsb
@@ -128,7 +130,7 @@ intervening step to compile the Fortran code.
    ```
 
 3. Build, install Go.  Run `go get` again to complete the Go
-   installation.
+   installation.  This builds and installs the package.
 
    ```shell
    [go-wrkspc]$ go get github.com/afbarnard/go-lbfgsb
@@ -179,13 +181,16 @@ manually and make it part of your Go workspace.
    ```
 
 
-Contact
--------
+Contact, Contribute
+-------------------
 
 * [Aubrey Barnard](https://github.com/afbarnard)
 
-Contributions of all sorts, patches, bugs, issues, etc. are welcome, but
-are most welcome after due diligence.
+Contributions of all sorts, patches, bugs, issues, questions, etc. are
+welcome, but are most welcome after due diligence.  Contact the author
+by creating a [new
+issue](https://github.com/afbarnard/go-lbfgsb/issues/new).  Contribute
+to the project by forking it, hacking, and issuing pull requests.
 
 
 Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
