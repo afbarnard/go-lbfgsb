@@ -36,17 +36,19 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 
 	// Import go-lbfgsb as a "third-party" package (since it was
 	// installed with 'go get').  Import as a local package if go-lbfgsb
 	// was installed into your workspace.  For example, if you put the
 	// code for this package in 'optim/go-lbfgsb', then 'import lbfgsb
-	// "optim/go-lbfgsb"'.  Changing the import to 'import lbfgsb ".."'
-	// allows this example program to use this package directly in its
-	// workspace without installing anything.
+	// "optim/go-lbfgsb"'.  To allow this example program to use this
+	// package directly without installing anything and when this
+	// package exists outside a Go workspace, use 'import lbfgsb ".."'.
 	lbfgsb "github.com/afbarnard/go-lbfgsb"
-	//lbfgsb ".."
+	//lbfgsb "go-lbfgsb"
+	//lbfsgb ".."
 )
 
 func main() {
@@ -102,7 +104,35 @@ func main() {
 	stats = rosenOptimizer.OptimizationStatistics()
 	PrintResults(rosenMin, minimum, exitStatus, stats)
 
-	// TODO example with bounds
+	////////////////////////////////////////
+	// Example 3: Bounds
+
+	// Create bounds (box constraints) explicitly for each dimension.
+	// Each pair represents an interval.
+	bounds := [][2]float64{
+		{1.0, 10.0},
+		{-10.0, -1.0},
+		{1.0, math.Inf(1.0)},
+		{math.Inf(-1.0), -1.0},
+		{math.Inf(-1.0), math.Inf(1.0)},
+	}
+	// Tell the optimizer about the bounds
+	sphereOptimizer.SetBounds(bounds)
+	// The constrained minimum is different
+	sphereBoundsMin := lbfgsb.PointValueGradient{
+		X: []float64{1.0, -1.0, 1.0, -1.0, 0.0},
+		F: 4.0,
+		G: []float64{2.0, -2.0, 2.0, -2.0, 0.0},
+	}
+
+	// Minimize sphere function subject to bounds
+	fmt.Printf("----- Sphere Function with Bounds -----\n")
+	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d)
+	stats = sphereOptimizer.OptimizationStatistics()
+	PrintResults(sphereBoundsMin, minimum, exitStatus, stats)
+
+	// Clear bounds
+	sphereOptimizer.ClearBounds()
 
 	////////////////////////////////////////
 	// Example 4: Logging
@@ -120,9 +150,19 @@ func main() {
 	stats = sphereOptimizer.OptimizationStatistics()
 	PrintResults(sphereMin, minimum, exitStatus, stats)
 
-	// TODO example with user errors
+	// Remove logger
+	sphereOptimizer.SetLogger(nil)
 
-	// TODO example with optimization errors
+	////////////////////////////////////////
+	// Example 5: Usage errors
+
+	// Create eventual error by reversing bounds
+	sphereOptimizer.SetBoundsAll(5.0, -5.0)
+	fmt.Printf("----- Sphere Function with Usage Error -----\n")
+	minimum, exitStatus = sphereOptimizer.Minimize(sphereObjective, x0_5d)
+	stats = sphereOptimizer.OptimizationStatistics()
+	PrintResults(sphereMin, minimum, exitStatus, stats)
+	sphereOptimizer.ClearBounds()
 }
 
 // Sphere (multi-dimensional parabola) function as a FunctionWithGradient object

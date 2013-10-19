@@ -314,7 +314,7 @@ func (lbfgsb *Lbfgsb) Minimize(
 
 	// Prepare buffers and arrays for C.  Avoid allocation in C land by
 	// allocating compatible things in Go and passing their addresses.
-	// The following arrays may not be iteroperably type-safe but this
+	// The following arrays may not be interoperably type-safe but this
 	// is how they did it on the Cgo page: http://golang.org/cmd/cgo/.
 	// (One could always allocate slices of C types, pass those, and
 	// then copy out and convert the contents on return.)

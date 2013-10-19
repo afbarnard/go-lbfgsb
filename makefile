@@ -16,7 +16,7 @@ compile_options := -g
 # General compiler warnings
 compile_warnings := -Wall -Wextra
 # Fortran compiler options.  Disallow implicit variables.
-compile_options_fortran := -fimplicit-none
+compile_options_fortran := -fimplicit-none -finit-local-zero
 
 # Compilation
 

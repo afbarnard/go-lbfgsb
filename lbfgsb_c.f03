@@ -408,6 +408,9 @@ contains
     state = 'START'
     task = state
 
+    ! Clearing state and output variables is done with the compiler
+    ! option '-finit-local-zero'.
+
     !print *, 'point:', point
     !print *, 'task:', task
 
