@@ -415,7 +415,7 @@ func go_objective_function_callback(
 
 	// Evaluate the objective function.  Let panics propagate through
 	// C/Fortran.
-	value := cbData.objective.Evaluate(point)
+	value := cbData.objective.EvaluateFunction(point)
 
 	// Convert outputs
 	*value_c = C.double(value)

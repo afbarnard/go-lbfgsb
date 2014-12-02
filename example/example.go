@@ -1,4 +1,4 @@
-// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// Copyright (c) 2014 Aubrey Barnard.  This is free software.  See
 // LICENSE.txt for details.
 
 // Main package providing some examples of how to use the lbfgsb
@@ -169,7 +169,7 @@ func main() {
 type SphereFunction struct{}
 
 // Sphere function
-func (sf SphereFunction) Evaluate(point []float64) (value float64) {
+func (sf SphereFunction) EvaluateFunction(point []float64) (value float64) {
 	for _, x := range point {
 		value += x * x
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// Copyright (c) 2014 Aubrey Barnard.  This is free software.  See
 // LICENSE.txt for details.
 
 // General interface to optimization algorithms.
@@ -35,8 +35,9 @@ type ObjectiveFunctionMinimizer interface {
 // and its gradient (f': R**n -> R**n) suitable for use as an objective
 // function for optimization.
 type FunctionWithGradient interface {
-	// Evaluate returns the value of the function at the given point.
-	Evaluate(point []float64) float64
+	// EvaluateFunction returns the value of the function at the given
+	// point.
+	EvaluateFunction(point []float64) float64
 	// EvaluateGradient returns the gradient of the function at the
 	// given point.
 	EvaluateGradient(point []float64) []float64
@@ -49,7 +50,7 @@ type GeneralObjectiveFunction struct {
 	Gradient func([]float64) []float64
 }
 
-func (gof GeneralObjectiveFunction) Evaluate(point []float64) float64 {
+func (gof GeneralObjectiveFunction) EvaluateFunction(point []float64) float64 {
 	return gof.Function(point)
 }
 
