@@ -1,4 +1,4 @@
-// Copyright (c) 2013 Aubrey Barnard.  This is free software.  See
+// Copyright (c) 2014 Aubrey Barnard.  This is free software.  See
 // LICENSE.txt for details.
 
 // Go package that provides an interface to the Fortran implementation
@@ -372,7 +372,7 @@ func makeCCopySlice_Float(slice []float64, sliceLen int) (
 	return
 }
 
-// Statistics returns some statistics about the most recent
+// OptimizationStatistics returns some statistics about the most recent
 // minimization: the total number of iterations and the total numbers of
 // function and gradient evaluations.
 func (lbfgsb *Lbfgsb) OptimizationStatistics() OptimizationStatistics {
